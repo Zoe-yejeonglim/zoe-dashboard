@@ -21,7 +21,7 @@ import {
   Wallet,
   TrendingUp,
 } from 'lucide-react'
-import { PieChart, Pie, Cell, ResponsiveContainer, Tooltip, Legend } from 'recharts'
+import { PieChart, Pie, Cell, ResponsiveContainer, Tooltip, Legend, BarChart, Bar, XAxis, YAxis, CartesianGrid } from 'recharts'
 
 // 支出分类（按照Excel）
 const EXPENSE_CATEGORIES = ['工作日餐饮', '休闲餐饮', '娱乐项目', '购物', '美丽基金', '其他']
@@ -40,10 +40,10 @@ interface FixedCost {
 
 interface DailyExpense {
   id: string
-  date: string
+  expense_date: string
   category: string
   amount: number
-  description: string | null
+  notes: string | null
 }
 
 interface MonthlyIncome {
@@ -113,7 +113,7 @@ export default function FinancePage() {
     try {
       const [fixedRes, expensesRes, savingsRes, sidejobRes, debtRes, settingsRes] = await Promise.all([
         supabase.from('finance_fixed_costs').select('*').eq('is_active', true).order('name'),
-        supabase.from('finance_expenses').select('*').order('date', { ascending: false }),
+        supabase.from('finance_expenses').select('*').order('expense_date', { ascending: false }),
         supabase.from('finance_savings').select('*').order('month'),
         supabase.from('sidejob_teaching').select('*').order('date', { ascending: false }),
         supabase.from('finance_debt').select('*').limit(1),
@@ -169,8 +169,17 @@ export default function FinancePage() {
   const disposableIncome = monthlySettings.monthly_salary - totalFixedCosts - debtInKRW - monthlySettings.target_savings
 
   // 本月支出（按当前月份筛选）
-  const currentMonthExpenses = dailyExpenses.filter(e => e.date.startsWith(currentMonth))
+  // 处理日期格式：可能是字符串 "2026-02-09" 或 Date 对象
+  const currentMonthExpenses = dailyExpenses.filter(e => {
+    const dateStr = typeof e.expense_date === 'string' ? e.expense_date : new Date(e.expense_date).toISOString().slice(0, 10)
+    return dateStr.startsWith(currentMonth)
+  })
   const totalCurrentMonthExpenses = currentMonthExpenses.reduce((sum, e) => sum + e.amount, 0)
+
+  // Debug: 打印到控制台
+  console.log('Current month:', currentMonth)
+  console.log('All expenses:', dailyExpenses)
+  console.log('Filtered expenses:', currentMonthExpenses)
 
   // 按分类统计本月支出
   const expenseByCategory = EXPENSE_CATEGORIES.map(cat => {
@@ -241,10 +250,10 @@ export default function FinancePage() {
     e.preventDefault()
     const formData = new FormData(e.currentTarget)
     const data = {
-      date: formData.get('date') as string,
+      expense_date: formData.get('date') as string,
       category: formData.get('category') as string,
       amount: parseInt(formData.get('amount') as string) || 0,
-      description: formData.get('description') as string || null,
+      notes: formData.get('description') as string || null,
     }
 
     try {
@@ -618,7 +627,7 @@ export default function FinancePage() {
                         <form onSubmit={handleSaveExpense} className="space-y-4">
                           <div>
                             <Label>日期</Label>
-                            <Input name="date" type="date" defaultValue={editingExpense?.date || new Date().toISOString().split('T')[0]} required className="mt-1" />
+                            <Input name="date" type="date" defaultValue={editingExpense?.expense_date || new Date().toISOString().split('T')[0]} required className="mt-1" />
                           </div>
                           <div>
                             <Label>分类</Label>
@@ -639,7 +648,7 @@ export default function FinancePage() {
                           </div>
                           <div>
                             <Label>备注</Label>
-                            <Input name="description" defaultValue={editingExpense?.description || ''} className="mt-1" />
+                            <Input name="description" defaultValue={editingExpense?.notes || ''} className="mt-1" />
                           </div>
                           <Button type="submit" className="w-full bg-[#F4A4A4] hover:bg-[#E89090]">保存</Button>
                         </form>
@@ -658,9 +667,11 @@ export default function FinancePage() {
                     {currentMonthExpenses.length === 0 ? (
                       <p className="text-center text-muted-foreground py-4 text-sm">本月暂无支出记录</p>
                     ) : (
-                      currentMonthExpenses.map(item => (
+                      currentMonthExpenses.map(item => {
+                        const dateStr = typeof item.expense_date === 'string' ? item.expense_date : new Date(item.expense_date).toISOString().slice(0, 10)
+                        return (
                         <div key={item.id} className="grid grid-cols-4 text-sm py-1.5 border-b border-dashed">
-                          <span className="text-xs">{item.date.slice(5)}</span>
+                          <span className="text-xs">{dateStr.slice(5)}</span>
                           <span className="text-xs">{item.category}</span>
                           <span className="text-right text-xs">{item.amount.toLocaleString()}</span>
                           <div className="flex justify-end gap-1">
@@ -676,7 +687,8 @@ export default function FinancePage() {
                             )}
                           </div>
                         </div>
-                      ))
+                        )
+                      })
                     )}
                   </div>
                 </CardContent>
@@ -739,160 +751,156 @@ export default function FinancePage() {
                 </CardContent>
               </Card>
 
-              {/* 本月储蓄预测 */}
-              <Card>
-                <CardHeader className="pb-2">
-                  <CardTitle className="text-base flex items-center gap-2">
-                    <PiggyBank className="h-4 w-4" /> 本月储蓄预测
-                  </CardTitle>
-                </CardHeader>
-                <CardContent>
-                  <div className="space-y-3">
-                    <div className="flex justify-between text-sm">
-                      <span>预计能存</span>
-                      <span className={`font-bold ${predictedSavings >= 0 ? 'text-green-600' : 'text-red-500'}`}>
-                        ₩{predictedSavings.toLocaleString()}
-                      </span>
-                    </div>
-                    <div className="flex justify-between text-sm">
-                      <span>vs 目标(100万)</span>
-                      <span className={`font-medium ${savingsGap >= 0 ? 'text-green-600' : 'text-red-500'}`}>
-                        {savingsGap >= 0 ? '+' : ''}{savingsGap.toLocaleString()}
-                      </span>
-                    </div>
-                    <div className={`text-center py-3 rounded-lg font-bold ${canMeetTarget ? 'bg-green-100 text-green-700' : 'bg-red-100 text-red-700'}`}>
-                      {canMeetTarget ? '✓ 可以达标！' : '✗ 需要控制支出'}
-                    </div>
-                  </div>
-                </CardContent>
-              </Card>
             </div>
           </div>
         </TabsContent>
 
         {/* ========== 月度总览 ========== */}
-        <TabsContent value="monthly">
+        <TabsContent value="monthly" className="space-y-6">
+          {/* 年度汇总卡片 */}
+          <div className="grid gap-4 md:grid-cols-4">
+            <Card className="bg-[#D1FAE5]">
+              <CardContent className="p-4">
+                <p className="text-sm text-gray-600">年度总收入</p>
+                <p className="text-2xl font-bold text-green-700">₩{(monthlySettings.monthly_salary * 12).toLocaleString()}</p>
+              </CardContent>
+            </Card>
+            <Card className="bg-[#FFE4E6]">
+              <CardContent className="p-4">
+                <p className="text-sm text-gray-600">年度总支出</p>
+                <p className="text-2xl font-bold text-[#F4A4A4]">₩{((totalFixedCosts + debtInKRW) * 12 + dailyExpenses.reduce((sum, e) => sum + e.amount, 0)).toLocaleString()}</p>
+              </CardContent>
+            </Card>
+            <Card className="bg-[#E0F2FE]">
+              <CardContent className="p-4">
+                <p className="text-sm text-gray-600">年度还债</p>
+                <p className="text-2xl font-bold text-blue-600">₩{(debtInKRW * 12).toLocaleString()}</p>
+              </CardContent>
+            </Card>
+            <Card className="bg-[#E0E7FF]">
+              <CardContent className="p-4">
+                <p className="text-sm text-gray-600">年度储蓄</p>
+                <p className="text-2xl font-bold text-purple-600">₩{totalActualSavings.toLocaleString()}</p>
+              </CardContent>
+            </Card>
+          </div>
+
+          {/* 月度支出柱状图 */}
           <Card>
             <CardHeader>
-              <CardTitle>{currentYear}年 月度资金总览</CardTitle>
+              <CardTitle>月度支出趋势</CardTitle>
             </CardHeader>
             <CardContent>
-              <div className="overflow-x-auto">
-                <table className="w-full text-sm">
-                  <thead>
-                    <tr className="border-b">
-                      <th className="text-left py-2 px-2 font-medium">项目</th>
-                      {months.map(m => (
-                        <th key={m} className="text-right py-2 px-2 font-medium">{parseInt(m.slice(5))}月</th>
-                      ))}
-                      <th className="text-right py-2 px-2 font-medium bg-gray-50">年合计</th>
-                    </tr>
-                  </thead>
-                  <tbody>
-                    {/* 收入部分 */}
-                    <tr className="bg-[#D1FAE5]">
-                      <td colSpan={14} className="py-2 px-2 font-bold">【收入】</td>
-                    </tr>
-                    <tr className="border-b">
-                      <td className="py-1 px-2">工资(税后)</td>
-                      {months.map(m => (
-                        <td key={m} className="text-right py-1 px-2">{monthlySettings.monthly_salary.toLocaleString()}</td>
-                      ))}
-                      <td className="text-right py-1 px-2 bg-gray-50 font-medium">{(monthlySettings.monthly_salary * 12).toLocaleString()}</td>
-                    </tr>
-                    <tr className="border-b">
-                      <td className="py-1 px-2">副业收入</td>
-                      {months.map(m => {
-                        const monthIncome = sidejobIncome.filter(s => s.date.startsWith(m)).reduce((sum, s) => sum + s.amount, 0)
-                        return <td key={m} className="text-right py-1 px-2">{monthIncome > 0 ? monthIncome.toLocaleString() : '-'}</td>
-                      })}
-                      <td className="text-right py-1 px-2 bg-gray-50 font-medium">{sidejobIncome.reduce((sum, s) => sum + s.amount, 0).toLocaleString()}</td>
-                    </tr>
-
-                    {/* 固定支出部分 */}
-                    <tr className="bg-[#FFE4E6]">
-                      <td colSpan={14} className="py-2 px-2 font-bold">【固定支出】</td>
-                    </tr>
-                    {fixedCosts.map(cost => (
-                      <tr key={cost.id} className="border-b">
-                        <td className="py-1 px-2">{cost.name}</td>
-                        {months.map(m => (
-                          <td key={m} className="text-right py-1 px-2">{cost.amount.toLocaleString()}</td>
-                        ))}
-                        <td className="text-right py-1 px-2 bg-gray-50 font-medium">{(cost.amount * 12).toLocaleString()}</td>
-                      </tr>
-                    ))}
-                    <tr className="border-b font-medium">
-                      <td className="py-1 px-2">固定支出小计</td>
-                      {months.map(m => (
-                        <td key={m} className="text-right py-1 px-2 text-[#F4A4A4]">{totalFixedCosts.toLocaleString()}</td>
-                      ))}
-                      <td className="text-right py-1 px-2 bg-gray-50 text-[#F4A4A4]">{(totalFixedCosts * 12).toLocaleString()}</td>
-                    </tr>
-
-                    {/* 还债 */}
-                    <tr className="bg-[#E0F2FE]">
-                      <td colSpan={14} className="py-2 px-2 font-bold">【还债】</td>
-                    </tr>
-                    <tr className="border-b">
-                      <td className="py-1 px-2">留学基金还款</td>
-                      {months.map(m => (
-                        <td key={m} className="text-right py-1 px-2">{debtInKRW.toLocaleString()}</td>
-                      ))}
-                      <td className="text-right py-1 px-2 bg-gray-50 font-medium">{(debtInKRW * 12).toLocaleString()}</td>
-                    </tr>
-
-                    {/* 生活支出 */}
-                    <tr className="bg-[#FEF3C7]">
-                      <td colSpan={14} className="py-2 px-2 font-bold">【生活支出】</td>
-                    </tr>
-                    {EXPENSE_CATEGORIES.map(cat => (
-                      <tr key={cat} className="border-b">
-                        <td className="py-1 px-2">{cat}</td>
-                        {months.map(m => {
-                          const amount = dailyExpenses.filter(e => e.date.startsWith(m) && e.category === cat).reduce((sum, e) => sum + e.amount, 0)
-                          return <td key={m} className="text-right py-1 px-2">{amount > 0 ? amount.toLocaleString() : '-'}</td>
-                        })}
-                        <td className="text-right py-1 px-2 bg-gray-50 font-medium">
-                          {dailyExpenses.filter(e => e.category === cat).reduce((sum, e) => sum + e.amount, 0).toLocaleString()}
-                        </td>
-                      </tr>
-                    ))}
-                    <tr className="border-b font-medium">
-                      <td className="py-1 px-2">生活支出合计</td>
-                      {months.map(m => {
-                        const amount = dailyExpenses.filter(e => e.date.startsWith(m)).reduce((sum, e) => sum + e.amount, 0)
-                        return <td key={m} className="text-right py-1 px-2 text-red-500">{amount > 0 ? amount.toLocaleString() : '-'}</td>
-                      })}
-                      <td className="text-right py-1 px-2 bg-gray-50 text-red-500">
-                        {dailyExpenses.reduce((sum, e) => sum + e.amount, 0).toLocaleString()}
-                      </td>
-                    </tr>
-
-                    {/* 储蓄 */}
-                    <tr className="bg-[#E0E7FF]">
-                      <td colSpan={14} className="py-2 px-2 font-bold">【储蓄】</td>
-                    </tr>
-                    <tr className="border-b">
-                      <td className="py-1 px-2">目标储蓄</td>
-                      {months.map(m => (
-                        <td key={m} className="text-right py-1 px-2">{monthlySettings.target_savings.toLocaleString()}</td>
-                      ))}
-                      <td className="text-right py-1 px-2 bg-gray-50 font-medium">{(monthlySettings.target_savings * 12).toLocaleString()}</td>
-                    </tr>
-                    <tr className="border-b">
-                      <td className="py-1 px-2">实际储蓄</td>
-                      {months.map(m => {
-                        const saving = monthlySavings.find(s => s.month === m)
-                        return <td key={m} className="text-right py-1 px-2 text-green-600">{saving?.actual_amount ? saving.actual_amount.toLocaleString() : '-'}</td>
-                      })}
-                      <td className="text-right py-1 px-2 bg-gray-50 font-medium text-green-600">{totalActualSavings.toLocaleString()}</td>
-                    </tr>
-                  </tbody>
-                </table>
+              <div className="h-[300px]">
+                <ResponsiveContainer width="100%" height="100%">
+                  <BarChart data={months.map(m => {
+                    const monthNum = parseInt(m.slice(5))
+                    const expenses = dailyExpenses.filter(e => e.expense_date.startsWith(m)).reduce((sum, e) => sum + e.amount, 0)
+                    const fixed = totalFixedCosts
+                    const debt = debtInKRW
+                    return { month: `${monthNum}月`, 生活支出: expenses, 固定支出: fixed, 还债: debt }
+                  })}>
+                    <CartesianGrid strokeDasharray="3 3" />
+                    <XAxis dataKey="month" />
+                    <YAxis tickFormatter={(value) => `${(value / 10000).toFixed(0)}万`} />
+                    <Tooltip formatter={(value) => `₩${Number(value).toLocaleString()}`} />
+                    <Legend />
+                    <Bar dataKey="生活支出" fill="#F4A4A4" />
+                    <Bar dataKey="固定支出" fill="#FFE4E6" />
+                    <Bar dataKey="还债" fill="#E0F2FE" />
+                  </BarChart>
+                </ResponsiveContainer>
               </div>
             </CardContent>
           </Card>
+
+          {/* 三个板块 */}
+          <div className="grid gap-6 md:grid-cols-3">
+            {/* 生活支出板块 */}
+            <Card>
+              <CardHeader className="bg-[#FFE4E6] rounded-t-lg">
+                <CardTitle className="text-base">生活支出</CardTitle>
+              </CardHeader>
+              <CardContent className="pt-4">
+                <div className="space-y-3">
+                  {EXPENSE_CATEGORIES.map(cat => {
+                    const amount = dailyExpenses.filter(e => e.category === cat).reduce((sum, e) => sum + e.amount, 0)
+                    return (
+                      <div key={cat} className="flex justify-between text-sm">
+                        <span>{cat}</span>
+                        <span className="font-medium">{amount > 0 ? `₩${amount.toLocaleString()}` : '-'}</span>
+                      </div>
+                    )
+                  })}
+                  <div className="border-t pt-2 flex justify-between font-bold">
+                    <span>合计</span>
+                    <span className="text-[#F4A4A4]">₩{dailyExpenses.reduce((sum, e) => sum + e.amount, 0).toLocaleString()}</span>
+                  </div>
+                </div>
+              </CardContent>
+            </Card>
+
+            {/* 固定支出+还债板块 */}
+            <Card>
+              <CardHeader className="bg-[#E0F2FE] rounded-t-lg">
+                <CardTitle className="text-base">固定支出 & 还债</CardTitle>
+              </CardHeader>
+              <CardContent className="pt-4">
+                <div className="space-y-3">
+                  {fixedCosts.map(cost => (
+                    <div key={cost.id} className="flex justify-between text-sm">
+                      <span>{cost.name}</span>
+                      <span className="font-medium">₩{cost.amount.toLocaleString()}/月</span>
+                    </div>
+                  ))}
+                  <div className="border-t pt-2 flex justify-between text-sm">
+                    <span className="font-medium">固定支出小计</span>
+                    <span className="font-medium">₩{totalFixedCosts.toLocaleString()}/月</span>
+                  </div>
+                  <div className="flex justify-between text-sm pt-2">
+                    <span>留学基金还款</span>
+                    <span className="font-medium text-blue-600">₩{debtInKRW.toLocaleString()}/月</span>
+                  </div>
+                  <div className="border-t pt-2 flex justify-between font-bold">
+                    <span>月度合计</span>
+                    <span className="text-blue-600">₩{(totalFixedCosts + debtInKRW).toLocaleString()}</span>
+                  </div>
+                </div>
+              </CardContent>
+            </Card>
+
+            {/* 储蓄板块 */}
+            <Card>
+              <CardHeader className="bg-[#E0E7FF] rounded-t-lg">
+                <CardTitle className="text-base">储蓄进度</CardTitle>
+              </CardHeader>
+              <CardContent className="pt-4">
+                <div className="space-y-3">
+                  <div className="flex justify-between text-sm">
+                    <span>年度目标</span>
+                    <span className="font-medium">₩{(monthlySettings.target_savings * 12).toLocaleString()}</span>
+                  </div>
+                  <div className="flex justify-between text-sm">
+                    <span>已储蓄</span>
+                    <span className="font-medium text-green-600">₩{totalActualSavings.toLocaleString()}</span>
+                  </div>
+                  <div className="w-full bg-gray-200 rounded-full h-4 mt-2">
+                    <div
+                      className="bg-purple-500 h-4 rounded-full transition-all"
+                      style={{ width: `${Math.min((totalActualSavings / (monthlySettings.target_savings * 12)) * 100, 100)}%` }}
+                    />
+                  </div>
+                  <div className="text-center text-sm text-muted-foreground">
+                    完成 {((totalActualSavings / (monthlySettings.target_savings * 12)) * 100).toFixed(1)}%
+                  </div>
+                  <div className="border-t pt-2 flex justify-between font-bold">
+                    <span>还需储蓄</span>
+                    <span className="text-purple-600">₩{Math.max(0, monthlySettings.target_savings * 12 - totalActualSavings).toLocaleString()}</span>
+                  </div>
+                </div>
+              </CardContent>
+            </Card>
+          </div>
         </TabsContent>
 
         {/* ========== 储蓄追踪 ========== */}
