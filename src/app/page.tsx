@@ -7,7 +7,6 @@ import {
   BookOpen,
   Wallet,
   Briefcase,
-  DollarSign,
   GraduationCap,
   ArrowUpRight,
 } from 'lucide-react'
@@ -19,8 +18,7 @@ export default function Home() {
     xiaohongshuNotes: 0,
     totalExpenses: 0,
     workAchievements: 0,
-    sidejobIncome: 0,
-    opicDays: 0,
+    learningProjects: 0,
     totalSavings: 0,
   })
   const [loading, setLoading] = useState(true)
@@ -36,29 +34,27 @@ export default function Home() {
 
     async function fetchStats() {
       try {
-        const [notes, expenses, achievements, teaching, opic, savings] = await Promise.all([
+        const [notes, expenses, achievements, projects, savings] = await Promise.all([
           supabase.from('xiaohongshu_notes').select('id', { count: 'exact' }),
           supabase.from('finance_expenses').select('amount'),
           supabase.from('work_achievements').select('id', { count: 'exact' }),
-          supabase.from('sidejob_teaching').select('income'),
-          supabase.from('opic_daily').select('id', { count: 'exact' }),
+          supabase.from('learning_projects').select('id', { count: 'exact' }),
           supabase.from('finance_savings').select('actual_amount'),
         ])
 
         const totalExpenses = expenses.data?.reduce((sum, e) => sum + (e.amount || 0), 0) || 0
-        const totalTeachingIncome = teaching.data?.reduce((sum, t) => sum + (t.income || 0), 0) || 0
         const totalSavings = savings.data?.reduce((sum, s) => sum + (s.actual_amount || 0), 0) || 0
 
         setStats({
           xiaohongshuNotes: notes.count || 0,
           totalExpenses,
           workAchievements: achievements.count || 0,
-          sidejobIncome: totalTeachingIncome,
-          opicDays: opic.count || 0,
+          learningProjects: projects.count || 0,
           totalSavings,
         })
       } catch (error) {
-              } finally {
+        console.error('Error fetching stats:', error)
+      } finally {
         setLoading(false)
       }
     }
@@ -106,23 +102,12 @@ export default function Home() {
       bg: '#EFF6FF',
     },
     {
-      title: '副业收入',
-      description: '教学与合作收入',
-      icon: DollarSign,
-      href: '/sidejob',
-      stat: stats.sidejobIncome,
-      unit: '总收入',
-      isAmount: true,
-      color: '#F59E0B',
-      bg: '#FFFBEB',
-    },
-    {
-      title: 'OPIC',
-      description: '每日学习记录',
+      title: '个人开发',
+      description: '学习进度与成长记录',
       icon: GraduationCap,
-      href: '/opic',
-      stat: stats.opicDays,
-      unit: '天',
+      href: '/personal-dev',
+      stat: stats.learningProjects,
+      unit: '个板块',
       color: '#8B5CF6',
       bg: '#F5F3FF',
     },
@@ -148,9 +133,9 @@ export default function Home() {
           </p>
         </div>
         <div className="bg-white rounded-xl p-5 border border-slate-200 hover:shadow-md transition-shadow">
-          <p className="text-xs text-slate-400 uppercase tracking-wider mb-1">副业</p>
+          <p className="text-xs text-slate-400 uppercase tracking-wider mb-1">支出</p>
           <p className="text-xl font-semibold text-slate-700">
-            {loading ? '...' : `₩${stats.sidejobIncome.toLocaleString()}`}
+            {loading ? '...' : `₩${stats.totalExpenses.toLocaleString()}`}
           </p>
         </div>
         <div className="bg-white rounded-xl p-5 border border-slate-200 hover:shadow-md transition-shadow">
@@ -162,7 +147,7 @@ export default function Home() {
         <div className="bg-white rounded-xl p-5 border border-slate-200 hover:shadow-md transition-shadow">
           <p className="text-xs text-slate-400 uppercase tracking-wider mb-1">学习</p>
           <p className="text-xl font-semibold text-slate-700">
-            {loading ? '...' : `${stats.opicDays} 天`}
+            {loading ? '...' : `${stats.learningProjects} 个板块`}
           </p>
         </div>
       </div>
