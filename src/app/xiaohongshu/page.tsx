@@ -12,6 +12,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from 
 import { createClient } from '@/lib/supabase/client'
 import { useAuth } from '@/lib/auth-context'
 import { toast } from 'sonner'
+import { getPraise } from '@/lib/praise'
 import {
   BookOpen,
   Eye,
@@ -71,10 +72,10 @@ export default function XiaohongshuPage() {
     try {
       if (editing) {
         await supabase.from('xiaohongshu_notes').update(data).eq('id', editing.id)
-        toast.success('笔记已更新')
+        toast.success('笔记已更新 - ' + getPraise('general'))
       } else {
         await supabase.from('xiaohongshu_notes').insert(data)
-        toast.success('笔记已添加')
+        toast.success('笔记已添加 - ' + getPraise('general'))
       }
       setDialogOpen(false)
       setEditing(null)
@@ -106,7 +107,7 @@ export default function XiaohongshuPage() {
         {isAuthenticated && (
           <Dialog open={dialogOpen} onOpenChange={setDialogOpen}>
             <DialogTrigger asChild>
-              <Button className="bg-[#F4A4A4] hover:bg-[#E89090]" onClick={() => setEditing(null)}>
+              <Button className="bg-slate-800 hover:bg-slate-700 text-white" onClick={() => setEditing(null)}>
                 <Plus className="h-4 w-4 mr-2" /> 添加笔记
               </Button>
             </DialogTrigger>
@@ -166,7 +167,7 @@ export default function XiaohongshuPage() {
                   <Label htmlFor="notes">备注</Label>
                   <Input id="notes" name="notes" defaultValue={editing?.notes || ''} className="mt-1" />
                 </div>
-                <Button type="submit" className="w-full bg-[#F4A4A4] hover:bg-[#E89090]">保存</Button>
+                <Button type="submit" className="w-full bg-slate-800 hover:bg-slate-700 text-white">保存</Button>
               </form>
             </DialogContent>
           </Dialog>
@@ -189,7 +190,7 @@ export default function XiaohongshuPage() {
           {loading ? (
             <div className="space-y-2">
               {[1, 2, 3].map(i => (
-                <div key={i} className="h-16 bg-gray-100 rounded animate-pulse" />
+                <div key={i} className="h-16 bg-slate-100 rounded animate-pulse" />
               ))}
             </div>
           ) : notes.length === 0 ? (
@@ -197,7 +198,7 @@ export default function XiaohongshuPage() {
           ) : (
             <div className="space-y-3">
               {notes.map(note => (
-                <div key={note.id} className="flex items-center justify-between p-4 border rounded-lg hover:bg-gray-50">
+                <div key={note.id} className="flex items-center justify-between p-4 border rounded-lg hover:bg-slate-50">
                   <div className="flex-1">
                     <h3 className="font-medium">{note.title}</h3>
                     <p className="text-sm text-muted-foreground">

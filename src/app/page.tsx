@@ -1,9 +1,7 @@
 'use client'
 
 import { useEffect, useState } from 'react'
-import { PageHeader } from '@/components/ui/page-header'
-import { StatCard } from '@/components/ui/stat-card'
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
+import { Card, CardContent } from '@/components/ui/card'
 import { createClient } from '@/lib/supabase/client'
 import {
   BookOpen,
@@ -11,9 +9,10 @@ import {
   Briefcase,
   DollarSign,
   GraduationCap,
-  TrendingUp,
+  ArrowUpRight,
 } from 'lucide-react'
 import Link from 'next/link'
+import { getPraise } from '@/lib/praise'
 
 export default function Home() {
   const [stats, setStats] = useState({
@@ -22,23 +21,33 @@ export default function Home() {
     workAchievements: 0,
     sidejobIncome: 0,
     opicDays: 0,
+    totalSavings: 0,
   })
   const [loading, setLoading] = useState(true)
+  const [greeting, setGreeting] = useState('')
   const supabase = createClient()
 
   useEffect(() => {
+    // Set greeting based on time
+    const hour = new Date().getHours()
+    if (hour < 12) setGreeting('Good morning')
+    else if (hour < 18) setGreeting('Good afternoon')
+    else setGreeting('Good evening')
+
     async function fetchStats() {
       try {
-        const [notes, expenses, achievements, teaching, opic] = await Promise.all([
+        const [notes, expenses, achievements, teaching, opic, savings] = await Promise.all([
           supabase.from('xiaohongshu_notes').select('id', { count: 'exact' }),
           supabase.from('finance_expenses').select('amount'),
           supabase.from('work_achievements').select('id', { count: 'exact' }),
           supabase.from('sidejob_teaching').select('income'),
           supabase.from('opic_daily').select('id', { count: 'exact' }),
+          supabase.from('finance_savings').select('actual_amount'),
         ])
 
         const totalExpenses = expenses.data?.reduce((sum, e) => sum + (e.amount || 0), 0) || 0
         const totalTeachingIncome = teaching.data?.reduce((sum, t) => sum + (t.income || 0), 0) || 0
+        const totalSavings = savings.data?.reduce((sum, s) => sum + (s.actual_amount || 0), 0) || 0
 
         setStats({
           xiaohongshuNotes: notes.count || 0,
@@ -46,6 +55,7 @@ export default function Home() {
           workAchievements: achievements.count || 0,
           sidejobIncome: totalTeachingIncome,
           opicDays: opic.count || 0,
+          totalSavings,
         })
       } catch (error) {
         console.error('Error fetching stats:', error)
@@ -57,106 +67,140 @@ export default function Home() {
     fetchStats()
   }, [supabase])
 
+  const now = new Date()
+  const dateStr = now.toLocaleDateString('en-US', {
+    weekday: 'long',
+    month: 'long',
+    day: 'numeric'
+  })
+
   const sections = [
     {
       title: '小红书',
-      description: '笔记数据追踪与变现管理',
+      description: '笔记数据与变现追踪',
       icon: BookOpen,
       href: '/xiaohongshu',
-      stat: `${stats.xiaohongshuNotes} 篇笔记`,
-      color: 'bg-[#FFE4E6]',
+      stat: stats.xiaohongshuNotes,
+      unit: '篇笔记',
+      color: '#F472B6',
+      bg: '#FDF2F8',
     },
     {
       title: '资金规划',
-      description: '每日记账与储蓄追踪',
+      description: '记账、储蓄与预算管理',
       icon: Wallet,
       href: '/finance',
-      stat: `¥${stats.totalExpenses.toLocaleString()} 总支出`,
-      color: 'bg-[#E0F2FE]',
+      stat: stats.totalExpenses,
+      unit: '总支出',
+      isAmount: true,
+      color: '#10B981',
+      bg: '#ECFDF5',
     },
     {
       title: '工作发展',
       description: 'STAR法则记录工作成果',
       icon: Briefcase,
       href: '/work',
-      stat: `${stats.workAchievements} 项成果`,
-      color: 'bg-[#FEF3C7]',
+      stat: stats.workAchievements,
+      unit: '项成果',
+      color: '#6B8AAE',
+      bg: '#EFF6FF',
     },
     {
-      title: '副业',
-      description: '中文老师与小红书变现',
+      title: '副业收入',
+      description: '教学与合作收入',
       icon: DollarSign,
       href: '/sidejob',
-      stat: `¥${stats.sidejobIncome.toLocaleString()} 收入`,
-      color: 'bg-[#D1FAE5]',
+      stat: stats.sidejobIncome,
+      unit: '总收入',
+      isAmount: true,
+      color: '#F59E0B',
+      bg: '#FFFBEB',
     },
     {
-      title: 'OPIC学习',
-      description: '每日学习记录与进度',
+      title: 'OPIC',
+      description: '每日学习记录',
       icon: GraduationCap,
       href: '/opic',
-      stat: `${stats.opicDays} 天记录`,
-      color: 'bg-[#E0E7FF]',
+      stat: stats.opicDays,
+      unit: '天',
+      color: '#8B5CF6',
+      bg: '#F5F3FF',
     },
   ]
 
   return (
-    <div className="space-y-8">
-      <PageHeader
-        title="欢迎回来，Zoe！"
-        description="这是你的个人管理仪表盘"
-      />
+    <div className="page-transition">
+      {/* Header */}
+      <div className="mb-12">
+        <p className="text-sm text-slate-400 tracking-wide mb-2">{dateStr}</p>
+        <h1 className="text-3xl font-semibold text-slate-800 mb-2">
+          {greeting}
+        </h1>
+        <p className="text-slate-500">{getPraise('general')}</p>
+      </div>
 
       {/* Quick Stats */}
-      <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
-        <StatCard
-          title="本月笔记"
-          value={stats.xiaohongshuNotes}
-          icon={BookOpen}
-          iconClassName="bg-[#FFE4E6]"
-        />
-        <StatCard
-          title="本月支出"
-          value={`¥${stats.totalExpenses.toLocaleString()}`}
-          icon={Wallet}
-          iconClassName="bg-[#E0F2FE]"
-        />
-        <StatCard
-          title="工作成果"
-          value={stats.workAchievements}
-          icon={Briefcase}
-          iconClassName="bg-[#FEF3C7]"
-        />
-        <StatCard
-          title="副业收入"
-          value={`¥${stats.sidejobIncome.toLocaleString()}`}
-          icon={TrendingUp}
-          iconClassName="bg-[#D1FAE5]"
-        />
+      <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 mb-12">
+        <div className="bg-white rounded-xl p-5 border border-slate-200 hover:shadow-md transition-shadow">
+          <p className="text-xs text-slate-400 uppercase tracking-wider mb-1">储蓄</p>
+          <p className="text-xl font-semibold text-slate-700">
+            {loading ? '...' : `₩${stats.totalSavings.toLocaleString()}`}
+          </p>
+        </div>
+        <div className="bg-white rounded-xl p-5 border border-slate-200 hover:shadow-md transition-shadow">
+          <p className="text-xs text-slate-400 uppercase tracking-wider mb-1">副业</p>
+          <p className="text-xl font-semibold text-slate-700">
+            {loading ? '...' : `₩${stats.sidejobIncome.toLocaleString()}`}
+          </p>
+        </div>
+        <div className="bg-white rounded-xl p-5 border border-slate-200 hover:shadow-md transition-shadow">
+          <p className="text-xs text-slate-400 uppercase tracking-wider mb-1">成果</p>
+          <p className="text-xl font-semibold text-slate-700">
+            {loading ? '...' : `${stats.workAchievements} 项`}
+          </p>
+        </div>
+        <div className="bg-white rounded-xl p-5 border border-slate-200 hover:shadow-md transition-shadow">
+          <p className="text-xs text-slate-400 uppercase tracking-wider mb-1">学习</p>
+          <p className="text-xl font-semibold text-slate-700">
+            {loading ? '...' : `${stats.opicDays} 天`}
+          </p>
+        </div>
       </div>
 
       {/* Section Cards */}
-      <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
+      <div className="space-y-3">
         {sections.map((section) => (
           <Link key={section.href} href={section.href}>
-            <Card className="h-full transition-all hover:shadow-lg hover:-translate-y-1 cursor-pointer">
-              <CardHeader>
-                <div className="flex items-center gap-3">
-                  <div className={`h-12 w-12 rounded-xl ${section.color} flex items-center justify-center`}>
-                    <section.icon className="h-6 w-6 text-gray-700" />
+            <div className="group bg-white rounded-xl p-5 border border-slate-200 hover:border-sky-300 hover:shadow-md transition-all cursor-pointer">
+              <div className="flex items-center justify-between">
+                <div className="flex items-center gap-4">
+                  <div
+                    className="h-10 w-10 rounded-xl flex items-center justify-center"
+                    style={{ backgroundColor: section.bg }}
+                  >
+                    <section.icon className="h-5 w-5" style={{ color: section.color }} />
                   </div>
                   <div>
-                    <CardTitle className="text-lg">{section.title}</CardTitle>
-                    <p className="text-sm text-muted-foreground">{section.description}</p>
+                    <h3 className="font-medium text-slate-700">{section.title}</h3>
+                    <p className="text-sm text-slate-400">{section.description}</p>
                   </div>
                 </div>
-              </CardHeader>
-              <CardContent>
-                <p className="text-2xl font-bold text-[#F4A4A4]">
-                  {loading ? '加载中...' : section.stat}
-                </p>
-              </CardContent>
-            </Card>
+                <div className="flex items-center gap-4">
+                  <div className="text-right">
+                    <p className="font-semibold text-slate-700">
+                      {loading ? '...' : (
+                        section.isAmount
+                          ? `₩${section.stat.toLocaleString()}`
+                          : section.stat
+                      )}
+                    </p>
+                    <p className="text-xs text-slate-400">{section.unit}</p>
+                  </div>
+                  <ArrowUpRight className="h-4 w-4 text-sky-400 opacity-0 group-hover:opacity-100 transition-opacity" />
+                </div>
+              </div>
+            </div>
           </Link>
         ))}
       </div>

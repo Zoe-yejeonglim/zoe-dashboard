@@ -12,6 +12,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from 
 import { createClient } from '@/lib/supabase/client'
 import { useAuth } from '@/lib/auth-context'
 import { toast } from 'sonner'
+import { getPraise } from '@/lib/praise'
 import {
   GraduationCap,
   Calendar,
@@ -62,10 +63,10 @@ export default function OpicPage() {
     try {
       if (editing) {
         await supabase.from('opic_daily').update(data).eq('id', editing.id)
-        toast.success('记录已更新')
+        toast.success('记录已更新 - ' + getPraise('study'))
       } else {
         await supabase.from('opic_daily').insert(data)
-        toast.success('记录已添加')
+        toast.success('学习记录已添加 - ' + getPraise('study'))
       }
       setDialogOpen(false)
       setEditing(null)
@@ -111,7 +112,7 @@ export default function OpicPage() {
         {isAuthenticated && (
           <Dialog open={dialogOpen} onOpenChange={setDialogOpen}>
             <DialogTrigger asChild>
-              <Button className="bg-[#F4A4A4] hover:bg-[#E89090]" onClick={() => setEditing(null)}>
+              <Button className="bg-slate-800 hover:bg-slate-700 text-white" onClick={() => setEditing(null)}>
                 <Plus className="h-4 w-4 mr-2" /> 添加记录
               </Button>
             </DialogTrigger>
@@ -151,7 +152,7 @@ export default function OpicPage() {
                     rows={3}
                   />
                 </div>
-                <Button type="submit" className="w-full bg-[#F4A4A4] hover:bg-[#E89090]">保存</Button>
+                <Button type="submit" className="w-full bg-slate-800 hover:bg-slate-700 text-white">保存</Button>
               </form>
             </DialogContent>
           </Dialog>
@@ -173,7 +174,7 @@ export default function OpicPage() {
           {loading ? (
             <div className="space-y-2">
               {[1, 2, 3].map(i => (
-                <div key={i} className="h-20 bg-gray-100 rounded animate-pulse" />
+                <div key={i} className="h-20 bg-slate-100 rounded animate-pulse" />
               ))}
             </div>
           ) : records.length === 0 ? (
@@ -181,12 +182,12 @@ export default function OpicPage() {
           ) : (
             <div className="space-y-3">
               {records.map(record => (
-                <div key={record.id} className="p-4 border rounded-lg hover:bg-gray-50">
+                <div key={record.id} className="p-4 border rounded-lg hover:bg-slate-50">
                   <div className="flex items-start justify-between">
                     <div className="flex-1">
                       <div className="flex items-center gap-3">
                         <span className="text-sm font-medium text-muted-foreground">{record.date}</span>
-                        <span className="text-sm text-[#F4A4A4]">{record.duration_minutes}分钟</span>
+                        <span className="text-sm text-slate-500">{record.duration_minutes}分钟</span>
                       </div>
                       <p className="mt-2 font-medium">{record.study_content}</p>
                       {record.notes && (

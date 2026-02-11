@@ -14,6 +14,7 @@ import { Badge } from '@/components/ui/badge'
 import { createClient } from '@/lib/supabase/client'
 import { useAuth } from '@/lib/auth-context'
 import { toast } from 'sonner'
+import { getPraise } from '@/lib/praise'
 import {
   Briefcase,
   Plus,
@@ -44,7 +45,7 @@ export default function WorkPage() {
   const [editing, setEditing] = useState<WorkAchievement | null>(null)
   const [expandedId, setExpandedId] = useState<string | null>(null)
 
-  // Keywords management
+  // Keywords management - 从 localStorage 加载
   const [allKeywords, setAllKeywords] = useState<string[]>(DEFAULT_KEYWORDS)
   const [selectedKeywords, setSelectedKeywords] = useState<string[]>([])
   const [filterKeyword, setFilterKeyword] = useState<string>('')
@@ -56,6 +57,27 @@ export default function WorkPage() {
 
   const supabase = createClient()
   const { isAuthenticated } = useAuth()
+
+  // 从 localStorage 加载关键词
+  useEffect(() => {
+    const saved = localStorage.getItem('work_keywords')
+    if (saved) {
+      try {
+        const parsed = JSON.parse(saved)
+        if (Array.isArray(parsed) && parsed.length > 0) {
+          setAllKeywords(parsed)
+        }
+      } catch (e) {
+        console.error('Failed to parse saved keywords')
+      }
+    }
+  }, [])
+
+  // 保存关键词到 localStorage
+  const saveKeywords = (keywords: string[]) => {
+    setAllKeywords(keywords)
+    localStorage.setItem('work_keywords', JSON.stringify(keywords))
+  }
 
   const fetchData = useCallback(async () => {
     try {
@@ -102,10 +124,10 @@ export default function WorkPage() {
     try {
       if (editing) {
         await supabase.from('work_achievements').update(data).eq('id', editing.id)
-        toast.success('成果已更新')
+        toast.success('成果已更新 - ' + getPraise('work'))
       } else {
         await supabase.from('work_achievements').insert(data)
-        toast.success('成果已添加')
+        toast.success('工作成果已记录 - ' + getPraise('work'))
       }
       setDialogOpen(false)
       setEditing(null)
@@ -151,14 +173,14 @@ export default function WorkPage() {
 
   const addNewKeyword = () => {
     if (newKeyword.trim() && !allKeywords.includes(newKeyword.trim())) {
-      setAllKeywords([...allKeywords, newKeyword.trim()].sort())
+      saveKeywords([...allKeywords, newKeyword.trim()].sort())
       setNewKeyword('')
       toast.success('关键词已添加')
     }
   }
 
   const deleteKeyword = (keyword: string) => {
-    setAllKeywords(allKeywords.filter(k => k !== keyword))
+    saveKeywords(allKeywords.filter(k => k !== keyword))
     setFilterKeyword('')
     toast.success('关键词已删除')
   }
@@ -210,7 +232,7 @@ export default function WorkPage() {
                         placeholder="输入新关键词"
                         onKeyDown={(e) => e.key === 'Enter' && (e.preventDefault(), addNewKeyword())}
                       />
-                      <Button onClick={addNewKeyword} className="bg-[#F4A4A4] hover:bg-[#E89090]">
+                      <Button onClick={addNewKeyword} className="bg-slate-800 hover:bg-slate-700 text-white">
                         添加
                       </Button>
                     </div>
@@ -236,7 +258,7 @@ export default function WorkPage() {
             </Dialog>
             <Dialog open={dialogOpen} onOpenChange={setDialogOpen}>
               <DialogTrigger asChild>
-                <Button className="bg-[#F4A4A4] hover:bg-[#E89090]" onClick={openNewDialog}>
+                <Button className="bg-slate-800 hover:bg-slate-700 text-white" onClick={openNewDialog}>
                   <Plus className="h-4 w-4 mr-2" /> 添加成果
                 </Button>
               </DialogTrigger>
@@ -273,13 +295,13 @@ export default function WorkPage() {
                   </div>
 
                   {/* Keywords Section */}
-                  <div className="space-y-3 p-4 border rounded-lg bg-gray-50">
+                  <div className="space-y-3 p-4 border rounded-lg bg-slate-50">
                     <Label className="text-base flex items-center gap-2">
                       <Tag className="h-4 w-4" /> 关键词标签（用于筛选简历素材）
                     </Label>
                     <div className="flex flex-wrap gap-2">
                       {formSkills.map(skill => (
-                        <Badge key={skill} className="bg-[#F4A4A4] text-white">
+                        <Badge key={skill} className="bg-sky-500 text-white">
                           {skill}
                           <X
                             className="h-3 w-3 ml-1 cursor-pointer"
@@ -293,7 +315,7 @@ export default function WorkPage() {
                         <Badge
                           key={keyword}
                           variant="outline"
-                          className="cursor-pointer hover:bg-[#FFE4E6] transition-colors"
+                          className="cursor-pointer hover:bg-sky-100 transition-colors"
                           onClick={() => addKeywordToForm(keyword)}
                         >
                           + {keyword}
@@ -307,7 +329,7 @@ export default function WorkPage() {
                     <h3 className="font-medium text-base">STAR 法则</h3>
                     <div className="grid gap-4">
                       <div>
-                        <Label htmlFor="situation" className="text-[#F4A4A4]">S - Situation（背景情况）</Label>
+                        <Label htmlFor="situation" className="text-sky-500">S - Situation（背景情况）</Label>
                         <Textarea
                           id="situation"
                           name="situation"
@@ -318,7 +340,7 @@ export default function WorkPage() {
                         />
                       </div>
                       <div>
-                        <Label htmlFor="task" className="text-[#F4A4A4]">T - Task（任务目标）</Label>
+                        <Label htmlFor="task" className="text-sky-500">T - Task（任务目标）</Label>
                         <Textarea
                           id="task"
                           name="task"
@@ -329,7 +351,7 @@ export default function WorkPage() {
                         />
                       </div>
                       <div>
-                        <Label htmlFor="action" className="text-[#F4A4A4]">A - Action（采取行动）</Label>
+                        <Label htmlFor="action" className="text-sky-500">A - Action（采取行动）</Label>
                         <Textarea
                           id="action"
                           name="action"
@@ -340,7 +362,7 @@ export default function WorkPage() {
                         />
                       </div>
                       <div>
-                        <Label htmlFor="result" className="text-[#F4A4A4]">R - Result（成果结果）</Label>
+                        <Label htmlFor="result" className="text-sky-500">R - Result（成果结果）</Label>
                         <Textarea
                           id="result"
                           name="result"
@@ -371,7 +393,7 @@ export default function WorkPage() {
                     </div>
                   </div>
 
-                  <Button type="submit" className="w-full bg-[#F4A4A4] hover:bg-[#E89090]">保存</Button>
+                  <Button type="submit" className="w-full bg-slate-800 hover:bg-slate-700 text-white">保存</Button>
                 </form>
               </DialogContent>
             </Dialog>
@@ -383,7 +405,7 @@ export default function WorkPage() {
       <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
         <StatCard title="总成果数" value={totalAchievements} icon={Briefcase} iconClassName="bg-[#FEF3C7]" />
         <StatCard title="本年" value={thisYearAchievements} icon={Calendar} iconClassName="bg-[#E0F2FE]" />
-        <StatCard title="本月" value={thisMonthAchievements} icon={CalendarDays} iconClassName="bg-[#FFE4E6]" />
+        <StatCard title="本月" value={thisMonthAchievements} icon={CalendarDays} iconClassName="bg-sky-100" />
         <StatCard title="本周" value={thisWeekAchievements} icon={CalendarClock} iconClassName="bg-[#E0E7FF]" />
       </div>
 
@@ -398,7 +420,7 @@ export default function WorkPage() {
           <div className="flex flex-wrap gap-2">
             <Badge
               variant={filterKeyword === '' ? 'default' : 'outline'}
-              className={`cursor-pointer ${filterKeyword === '' ? 'bg-[#F4A4A4]' : 'hover:bg-[#FFE4E6]'}`}
+              className={`cursor-pointer ${filterKeyword === '' ? 'bg-sky-500' : 'hover:bg-sky-100'}`}
               onClick={() => setFilterKeyword('')}
             >
               全部
@@ -410,7 +432,7 @@ export default function WorkPage() {
                 <Badge
                   key={keyword}
                   variant={filterKeyword === keyword ? 'default' : 'outline'}
-                  className={`cursor-pointer ${filterKeyword === keyword ? 'bg-[#F4A4A4]' : 'hover:bg-[#FFE4E6]'}`}
+                  className={`cursor-pointer ${filterKeyword === keyword ? 'bg-sky-500' : 'hover:bg-sky-100'}`}
                   onClick={() => setFilterKeyword(keyword)}
                 >
                   {keyword} ({count})
@@ -431,7 +453,7 @@ export default function WorkPage() {
         {loading ? (
           <div className="space-y-4">
             {[1, 2, 3].map(i => (
-              <div key={i} className="h-24 bg-gray-100 rounded-lg animate-pulse" />
+              <div key={i} className="h-24 bg-slate-100 rounded-lg animate-pulse" />
             ))}
           </div>
         ) : filteredAchievements.length === 0 ? (
@@ -461,7 +483,7 @@ export default function WorkPage() {
                     {achievement.skills && achievement.skills.length > 0 && (
                       <div className="flex flex-wrap gap-1 pt-1">
                         {achievement.skills.map((skill, i) => (
-                          <Badge key={i} variant="outline" className="text-xs bg-[#FFE4E6] border-[#F4A4A4]">
+                          <Badge key={i} variant="outline" className="text-xs bg-sky-100 border-sky-300">
                             {skill}
                           </Badge>
                         ))}
@@ -504,29 +526,29 @@ export default function WorkPage() {
               </CardHeader>
 
               {expandedId === achievement.id && (
-                <CardContent className="border-t bg-gray-50">
+                <CardContent className="border-t bg-slate-50">
                   <div className="grid gap-4 md:grid-cols-2">
                     {achievement.situation && (
                       <div>
-                        <h4 className="font-medium text-sm text-[#F4A4A4] mb-1">S - Situation</h4>
+                        <h4 className="font-medium text-sm text-sky-500 mb-1">S - Situation</h4>
                         <p className="text-sm">{achievement.situation}</p>
                       </div>
                     )}
                     {achievement.task && (
                       <div>
-                        <h4 className="font-medium text-sm text-[#F4A4A4] mb-1">T - Task</h4>
+                        <h4 className="font-medium text-sm text-sky-500 mb-1">T - Task</h4>
                         <p className="text-sm">{achievement.task}</p>
                       </div>
                     )}
                     {achievement.action && (
                       <div>
-                        <h4 className="font-medium text-sm text-[#F4A4A4] mb-1">A - Action</h4>
+                        <h4 className="font-medium text-sm text-sky-500 mb-1">A - Action</h4>
                         <p className="text-sm">{achievement.action}</p>
                       </div>
                     )}
                     {achievement.result && (
                       <div>
-                        <h4 className="font-medium text-sm text-[#F4A4A4] mb-1">R - Result</h4>
+                        <h4 className="font-medium text-sm text-sky-500 mb-1">R - Result</h4>
                         <p className="text-sm">{achievement.result}</p>
                       </div>
                     )}

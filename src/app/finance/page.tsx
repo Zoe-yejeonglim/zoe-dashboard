@@ -22,12 +22,13 @@ import {
   TrendingUp,
 } from 'lucide-react'
 import { PieChart, Pie, Cell, ResponsiveContainer, Tooltip, Legend, BarChart, Bar, XAxis, YAxis, CartesianGrid } from 'recharts'
+import { getPraise } from '@/lib/praise'
 
 // 支出分类（按照Excel）
 const EXPENSE_CATEGORIES = ['工作日餐饮', '休闲餐饮', '娱乐项目', '购物', '美丽基金', '其他']
 const INCOME_SOURCES = ['中文老师', '小红书', '其他收入']
 
-const COLORS = ['#F4A4A4', '#FFE4E6', '#E0F2FE', '#D1FAE5', '#FEF3C7', '#E0E7FF']
+const COLORS = ['#38BDF8', '#6B8AAE', '#94A3B8', '#0EA5E9', '#CBD5E1', '#64748B']
 
 // Types
 interface FixedCost {
@@ -83,12 +84,22 @@ interface MonthlySettings {
   target_savings: number
 }
 
+interface MonthlyRecord {
+  id: string
+  month: string // YYYY-MM
+  fixed_costs_total: number
+  debt_payment: number
+  salary: number
+  notes: string | null
+}
+
 export default function FinancePage() {
   // State
   const [fixedCosts, setFixedCosts] = useState<FixedCost[]>([])
   const [dailyExpenses, setDailyExpenses] = useState<DailyExpense[]>([])
   const [monthlySavings, setMonthlySavings] = useState<MonthlySaving[]>([])
   const [sidejobIncome, setSidejobIncome] = useState<SidejobIncome[]>([])
+  const [monthlyRecords, setMonthlyRecords] = useState<MonthlyRecord[]>([])
   const [debtSettings, setDebtSettings] = useState<DebtSettings>({ id: '', cny_amount: 3250, exchange_rate: 190 })
   const [monthlySettings, setMonthlySettings] = useState<MonthlySettings>({ id: '', monthly_salary: 2820000, target_savings: 1000000 })
   const [loading, setLoading] = useState(true)
@@ -98,10 +109,12 @@ export default function FinancePage() {
   const [expenseDialogOpen, setExpenseDialogOpen] = useState(false)
   const [savingsDialogOpen, setSavingsDialogOpen] = useState(false)
   const [sidejobDialogOpen, setSidejobDialogOpen] = useState(false)
+  const [monthlyRecordDialogOpen, setMonthlyRecordDialogOpen] = useState(false)
   const [editingFixedCost, setEditingFixedCost] = useState<FixedCost | null>(null)
   const [editingExpense, setEditingExpense] = useState<DailyExpense | null>(null)
   const [editingSaving, setEditingSaving] = useState<MonthlySaving | null>(null)
   const [editingSidejob, setEditingSidejob] = useState<SidejobIncome | null>(null)
+  const [editingMonthlyRecord, setEditingMonthlyRecord] = useState<MonthlyRecord | null>(null)
 
   const supabase = createClient()
   const { isAuthenticated } = useAuth()
@@ -111,18 +124,20 @@ export default function FinancePage() {
 
   const fetchData = useCallback(async () => {
     try {
-      const [fixedRes, expensesRes, savingsRes, sidejobRes, debtRes, settingsRes] = await Promise.all([
+      const [fixedRes, expensesRes, savingsRes, sidejobRes, debtRes, settingsRes, monthlyRecordsRes] = await Promise.all([
         supabase.from('finance_fixed_costs').select('*').eq('is_active', true).order('name'),
         supabase.from('finance_expenses').select('*').order('expense_date', { ascending: false }),
         supabase.from('finance_savings').select('*').order('month'),
         supabase.from('sidejob_teaching').select('*').order('date', { ascending: false }),
         supabase.from('finance_debt').select('*').limit(1),
         supabase.from('finance_settings').select('*').limit(1),
+        supabase.from('finance_monthly_records').select('*').order('month'),
       ])
 
       setFixedCosts(fixedRes.data || [])
       setDailyExpenses(expensesRes.data || [])
       setMonthlySavings(savingsRes.data || [])
+      setMonthlyRecords(monthlyRecordsRes.data || [])
       setSidejobIncome(sidejobRes.data?.map(item => ({
         id: item.id,
         date: item.date,
@@ -132,11 +147,15 @@ export default function FinancePage() {
       })) || [])
 
       if (debtRes.data && debtRes.data[0]) {
+        const debt = debtRes.data[0]
         setDebtSettings({
-          id: debtRes.data[0].id,
-          cny_amount: debtRes.data[0].original_amount || 3250,
-          exchange_rate: debtRes.data[0].interest_rate || 190 // 借用interest_rate字段存汇率
+          id: debt.id,
+          cny_amount: debt.original_amount ?? 3250,
+          exchange_rate: debt.interest_rate ?? 190
         })
+        console.log('Loaded debt settings:', debt)
+      } else {
+        console.log('No debt settings found in database')
       }
 
       if (settingsRes.data && settingsRes.data[0]) {
@@ -221,10 +240,10 @@ export default function FinancePage() {
     try {
       if (editingFixedCost) {
         await supabase.from('finance_fixed_costs').update(data).eq('id', editingFixedCost.id)
-        toast.success('固定支出已更新')
+        toast.success('固定支出已更新 - ' + getPraise('expense'))
       } else {
         await supabase.from('finance_fixed_costs').insert(data)
-        toast.success('固定支出已添加')
+        toast.success('固定支出已添加 - ' + getPraise('expense'))
       }
       setFixedCostDialogOpen(false)
       setEditingFixedCost(null)
@@ -259,10 +278,10 @@ export default function FinancePage() {
     try {
       if (editingExpense) {
         await supabase.from('finance_expenses').update(data).eq('id', editingExpense.id)
-        toast.success('支出已更新')
+        toast.success('支出已记录 - ' + getPraise('expense'))
       } else {
         await supabase.from('finance_expenses').insert(data)
-        toast.success('支出已添加')
+        toast.success('记录成功 - ' + getPraise('expense'))
       }
       setExpenseDialogOpen(false)
       setEditingExpense(null)
@@ -295,17 +314,28 @@ export default function FinancePage() {
     }
 
     try {
-      if (editingSaving) {
-        await supabase.from('finance_savings').update(data).eq('id', editingSaving.id)
-        toast.success('储蓄记录已更新')
+      if (editingSaving?.id) {
+        const { error } = await supabase.from('finance_savings').update(data).eq('id', editingSaving.id)
+        if (error) {
+          console.error('Update error:', error)
+          toast.error(`更新失败: ${error.message}`)
+          return
+        }
+        toast.success('储蓄记录已更新 - ' + getPraise('savings'))
       } else {
-        await supabase.from('finance_savings').insert(data)
-        toast.success('储蓄记录已添加')
+        const { error } = await supabase.from('finance_savings').insert(data)
+        if (error) {
+          console.error('Insert error:', error)
+          toast.error(`添加失败: ${error.message}`)
+          return
+        }
+        toast.success('储蓄记录已添加 - ' + getPraise('savings'))
       }
       setSavingsDialogOpen(false)
       setEditingSaving(null)
       fetchData()
     } catch (error) {
+      console.error('Save error:', error)
       toast.error('操作失败')
     }
   }
@@ -336,10 +366,10 @@ export default function FinancePage() {
     try {
       if (editingSidejob) {
         await supabase.from('sidejob_teaching').update(data).eq('id', editingSidejob.id)
-        toast.success('副业收入已更新')
+        toast.success('副业收入已更新 - ' + getPraise('sidejob'))
       } else {
         await supabase.from('sidejob_teaching').insert(data)
-        toast.success('副业收入已添加')
+        toast.success('副业收入已添加 - ' + getPraise('sidejob'))
       }
       setSidejobDialogOpen(false)
       setEditingSidejob(null)
@@ -360,16 +390,71 @@ export default function FinancePage() {
     }
   }
 
+  // 月度记录
+  const handleSaveMonthlyRecord = async (e: React.FormEvent<HTMLFormElement>) => {
+    e.preventDefault()
+    const formData = new FormData(e.currentTarget)
+    const data = {
+      month: formData.get('month') as string,
+      fixed_costs_total: parseInt(formData.get('fixed_costs_total') as string) || 0,
+      debt_payment: parseInt(formData.get('debt_payment') as string) || 0,
+      salary: parseInt(formData.get('salary') as string) || 0,
+      notes: formData.get('notes') as string || null,
+    }
+
+    try {
+      if (editingMonthlyRecord?.id) {
+        const { error } = await supabase.from('finance_monthly_records').update(data).eq('id', editingMonthlyRecord.id)
+        if (error) {
+          console.error('Update error:', error)
+          toast.error(`更新失败: ${error.message}`)
+          return
+        }
+        toast.success('月度记录已更新 - ' + getPraise('expense'))
+      } else {
+        const { error } = await supabase.from('finance_monthly_records').insert(data)
+        if (error) {
+          console.error('Insert error:', error)
+          toast.error(`添加失败: ${error.message}`)
+          return
+        }
+        toast.success('月度记录已添加 - ' + getPraise('expense'))
+      }
+      setMonthlyRecordDialogOpen(false)
+      setEditingMonthlyRecord(null)
+      fetchData()
+    } catch (error) {
+      console.error('Save error:', error)
+      toast.error('操作失败，请检查数据库表是否存在')
+    }
+  }
+
+  const handleDeleteMonthlyRecord = async (item: MonthlyRecord) => {
+    if (!confirm('确定删除这个月的记录吗？')) return
+    try {
+      await supabase.from('finance_monthly_records').delete().eq('id', item.id)
+      toast.success('已删除')
+      fetchData()
+    } catch (error) {
+      toast.error('删除失败')
+    }
+  }
+
   // 更新还债设置
   const handleUpdateDebtSettings = async () => {
     try {
       if (debtSettings.id) {
-        await supabase.from('finance_debt').update({
+        const { error } = await supabase.from('finance_debt').update({
           original_amount: debtSettings.cny_amount,
           interest_rate: debtSettings.exchange_rate,
         }).eq('id', debtSettings.id)
+        if (error) {
+          console.error('Debt update error:', error)
+          toast.error(`保存失败: ${error.message}`)
+          return
+        }
       } else {
-        const { data } = await supabase.from('finance_debt').insert({
+        const { data, error } = await supabase.from('finance_debt').insert({
           name: '留学基金还款',
           original_amount: debtSettings.cny_amount,
           remaining_amount: debtSettings.cny_amount,
@@ -377,12 +462,19 @@ export default function FinancePage() {
           interest_rate: debtSettings.exchange_rate,
           monthly_payment: debtSettings.cny_amount * debtSettings.exchange_rate,
         }).select()
+        if (error) {
+          console.error('Debt insert error:', error)
+          toast.error(`保存失败: ${error.message}`)
+          return
+        }
         if (data && data[0]) {
           setDebtSettings(prev => ({ ...prev, id: data[0].id }))
         }
       }
       toast.success('还债设置已保存')
+      console.log('Saved debt settings:', debtSettings)
     } catch (error) {
+      console.error('Save error:', error)
       toast.error('保存失败')
     }
   }
@@ -466,7 +558,7 @@ export default function FinancePage() {
                             <Label>备注</Label>
                             <Input name="notes" defaultValue={editingFixedCost?.notes || ''} className="mt-1" />
                           </div>
-                          <Button type="submit" className="w-full bg-[#F4A4A4] hover:bg-[#E89090]">保存</Button>
+                          <Button type="submit" className="w-full bg-slate-800 hover:bg-slate-700 text-white">保存</Button>
                         </form>
                       </DialogContent>
                     </Dialog>
@@ -497,9 +589,9 @@ export default function FinancePage() {
                         </div>
                       </div>
                     ))}
-                    <div className="grid grid-cols-3 text-sm font-bold pt-2 bg-gray-50 -mx-6 px-6 py-2">
+                    <div className="grid grid-cols-3 text-sm font-bold pt-2 bg-slate-50 -mx-6 px-6 py-2">
                       <span>固定支出合计</span>
-                      <span className="text-right text-[#F4A4A4]">{totalFixedCosts.toLocaleString()}</span>
+                      <span className="text-right text-slate-600">{totalFixedCosts.toLocaleString()}</span>
                       <span className="text-right text-xs text-muted-foreground">自动计算</span>
                     </div>
                   </div>
@@ -537,9 +629,9 @@ export default function FinancePage() {
                       />
                       <span className="text-xs text-muted-foreground ml-2 self-center">汇率变动时修改</span>
                     </div>
-                    <div className="grid grid-cols-3 text-sm font-bold bg-gray-50 -mx-6 px-6 py-2">
+                    <div className="grid grid-cols-3 text-sm font-bold bg-slate-50 -mx-6 px-6 py-2">
                       <span>韩币金额</span>
-                      <span className="text-[#F4A4A4]">{debtInKRW.toLocaleString()}</span>
+                      <span className="text-slate-600">{debtInKRW.toLocaleString()}</span>
                       <span className="text-xs text-muted-foreground">自动计算</span>
                     </div>
                     {isAuthenticated && (
@@ -592,9 +684,9 @@ export default function FinancePage() {
                       />
                       <span></span>
                     </div>
-                    <div className="grid grid-cols-3 text-sm font-bold bg-[#FFE4E6] -mx-6 px-6 py-3 mt-2">
+                    <div className="grid grid-cols-3 text-sm font-bold bg-slate-100 -mx-6 px-6 py-3 mt-2">
                       <span>可支配生活费</span>
-                      <span className="text-[#F4A4A4]">{disposableIncome.toLocaleString()}</span>
+                      <span className="text-slate-600">{disposableIncome.toLocaleString()}</span>
                       <span className="text-xs text-muted-foreground">收入-固定-还债-储蓄</span>
                     </div>
                     {isAuthenticated && (
@@ -616,7 +708,7 @@ export default function FinancePage() {
                   {isAuthenticated && (
                     <Dialog open={expenseDialogOpen} onOpenChange={setExpenseDialogOpen}>
                       <DialogTrigger asChild>
-                        <Button size="sm" className="bg-[#F4A4A4] hover:bg-[#E89090]" onClick={() => setEditingExpense(null)}>
+                        <Button size="sm" className="bg-slate-800 hover:bg-slate-700 text-white" onClick={() => setEditingExpense(null)}>
                           <Plus className="h-4 w-4 mr-1" /> 添加
                         </Button>
                       </DialogTrigger>
@@ -650,7 +742,7 @@ export default function FinancePage() {
                             <Label>备注</Label>
                             <Input name="description" defaultValue={editingExpense?.notes || ''} className="mt-1" />
                           </div>
-                          <Button type="submit" className="w-full bg-[#F4A4A4] hover:bg-[#E89090]">保存</Button>
+                          <Button type="submit" className="w-full bg-slate-800 hover:bg-slate-700 text-white">保存</Button>
                         </form>
                       </DialogContent>
                     </Dialog>
@@ -717,7 +809,7 @@ export default function FinancePage() {
                         </div>
                       )
                     })}
-                    <div className="grid grid-cols-3 text-sm font-bold bg-gray-50 -mx-6 px-6 py-2 mt-2">
+                    <div className="grid grid-cols-3 text-sm font-bold bg-slate-50 -mx-6 px-6 py-2 mt-2">
                       <span>本月已花合计</span>
                       <span className="text-right text-red-500">{totalSpentThisMonth.toLocaleString()}</span>
                       <span className="text-right">100%</span>
@@ -757,150 +849,266 @@ export default function FinancePage() {
 
         {/* ========== 月度总览 ========== */}
         <TabsContent value="monthly" className="space-y-6">
-          {/* 年度汇总卡片 */}
-          <div className="grid gap-4 md:grid-cols-4">
-            <Card className="bg-[#D1FAE5]">
-              <CardContent className="p-4">
-                <p className="text-sm text-gray-600">年度总收入</p>
-                <p className="text-2xl font-bold text-green-700">₩{(monthlySettings.monthly_salary * 12).toLocaleString()}</p>
-              </CardContent>
-            </Card>
-            <Card className="bg-[#FFE4E6]">
-              <CardContent className="p-4">
-                <p className="text-sm text-gray-600">年度总支出</p>
-                <p className="text-2xl font-bold text-[#F4A4A4]">₩{((totalFixedCosts + debtInKRW) * 12 + dailyExpenses.reduce((sum, e) => sum + e.amount, 0)).toLocaleString()}</p>
-              </CardContent>
-            </Card>
-            <Card className="bg-[#E0F2FE]">
-              <CardContent className="p-4">
-                <p className="text-sm text-gray-600">年度还债</p>
-                <p className="text-2xl font-bold text-blue-600">₩{(debtInKRW * 12).toLocaleString()}</p>
-              </CardContent>
-            </Card>
-            <Card className="bg-[#E0E7FF]">
-              <CardContent className="p-4">
-                <p className="text-sm text-gray-600">年度储蓄</p>
-                <p className="text-2xl font-bold text-purple-600">₩{totalActualSavings.toLocaleString()}</p>
-              </CardContent>
-            </Card>
-          </div>
+          {(() => {
+            // 从实际记录计算年度总和
+            const yearRecords = monthlyRecords.filter(r => r.month.startsWith(String(currentYear)))
+            const yearTotalSalary = yearRecords.reduce((sum, r) => sum + r.salary, 0)
+            const yearTotalFixedCosts = yearRecords.reduce((sum, r) => sum + r.fixed_costs_total, 0)
+            const yearTotalDebt = yearRecords.reduce((sum, r) => sum + r.debt_payment, 0)
+            const yearTotalExpenses = dailyExpenses
+              .filter(e => e.expense_date.startsWith(String(currentYear)))
+              .reduce((sum, e) => sum + e.amount, 0)
 
-          {/* 月度支出柱状图 */}
-          <Card>
-            <CardHeader>
-              <CardTitle>月度支出趋势</CardTitle>
-            </CardHeader>
-            <CardContent>
-              <div className="h-[300px]">
-                <ResponsiveContainer width="100%" height="100%">
-                  <BarChart data={months.map(m => {
-                    const monthNum = parseInt(m.slice(5))
-                    const expenses = dailyExpenses.filter(e => e.expense_date.startsWith(m)).reduce((sum, e) => sum + e.amount, 0)
-                    const fixed = totalFixedCosts
-                    const debt = debtInKRW
-                    return { month: `${monthNum}月`, 生活支出: expenses, 固定支出: fixed, 还债: debt }
-                  })}>
-                    <CartesianGrid strokeDasharray="3 3" />
-                    <XAxis dataKey="month" />
-                    <YAxis tickFormatter={(value) => `${(value / 10000).toFixed(0)}万`} />
-                    <Tooltip formatter={(value) => `₩${Number(value).toLocaleString()}`} />
-                    <Legend />
-                    <Bar dataKey="生活支出" fill="#F4A4A4" />
-                    <Bar dataKey="固定支出" fill="#FFE4E6" />
-                    <Bar dataKey="还债" fill="#E0F2FE" />
-                  </BarChart>
-                </ResponsiveContainer>
-              </div>
-            </CardContent>
-          </Card>
-
-          {/* 三个板块 */}
-          <div className="grid gap-6 md:grid-cols-3">
-            {/* 生活支出板块 */}
-            <Card>
-              <CardHeader className="bg-[#FFE4E6] rounded-t-lg">
-                <CardTitle className="text-base">生活支出</CardTitle>
-              </CardHeader>
-              <CardContent className="pt-4">
-                <div className="space-y-3">
-                  {EXPENSE_CATEGORIES.map(cat => {
-                    const amount = dailyExpenses.filter(e => e.category === cat).reduce((sum, e) => sum + e.amount, 0)
-                    return (
-                      <div key={cat} className="flex justify-between text-sm">
-                        <span>{cat}</span>
-                        <span className="font-medium">{amount > 0 ? `₩${amount.toLocaleString()}` : '-'}</span>
-                      </div>
-                    )
-                  })}
-                  <div className="border-t pt-2 flex justify-between font-bold">
-                    <span>合计</span>
-                    <span className="text-[#F4A4A4]">₩{dailyExpenses.reduce((sum, e) => sum + e.amount, 0).toLocaleString()}</span>
-                  </div>
+            return (
+              <>
+                {/* 年度汇总卡片 - 从实际记录累加 */}
+                <div className="grid gap-4 md:grid-cols-4">
+                  <Card className="bg-[#D1FAE5]">
+                    <CardContent className="p-4">
+                      <p className="text-sm text-gray-600">年度总收入</p>
+                      <p className="text-2xl font-bold text-green-700">₩{yearTotalSalary.toLocaleString()}</p>
+                      <p className="text-xs text-gray-500 mt-1">来自{yearRecords.length}个月记录</p>
+                    </CardContent>
+                  </Card>
+                  <Card className="bg-slate-100">
+                    <CardContent className="p-4">
+                      <p className="text-sm text-gray-600">年度固定支出</p>
+                      <p className="text-2xl font-bold text-slate-600">₩{yearTotalFixedCosts.toLocaleString()}</p>
+                    </CardContent>
+                  </Card>
+                  <Card className="bg-[#E0F2FE]">
+                    <CardContent className="p-4">
+                      <p className="text-sm text-gray-600">年度还债</p>
+                      <p className="text-2xl font-bold text-blue-600">₩{yearTotalDebt.toLocaleString()}</p>
+                    </CardContent>
+                  </Card>
+                  <Card className="bg-[#FEF3C7]">
+                    <CardContent className="p-4">
+                      <p className="text-sm text-gray-600">年度生活支出</p>
+                      <p className="text-2xl font-bold text-orange-600">₩{yearTotalExpenses.toLocaleString()}</p>
+                    </CardContent>
+                  </Card>
                 </div>
-              </CardContent>
-            </Card>
 
-            {/* 固定支出+还债板块 */}
-            <Card>
-              <CardHeader className="bg-[#E0F2FE] rounded-t-lg">
-                <CardTitle className="text-base">固定支出 & 还债</CardTitle>
-              </CardHeader>
-              <CardContent className="pt-4">
-                <div className="space-y-3">
-                  {fixedCosts.map(cost => (
-                    <div key={cost.id} className="flex justify-between text-sm">
-                      <span>{cost.name}</span>
-                      <span className="font-medium">₩{cost.amount.toLocaleString()}/月</span>
+                {/* 月度记录表格 */}
+                <Card>
+                  <CardHeader className="flex flex-row items-center justify-between">
+                    <div>
+                      <CardTitle>月度记录</CardTitle>
+                      <p className="text-sm text-muted-foreground mt-1">记录每个月的实际收入、固定支出和还债金额</p>
                     </div>
-                  ))}
-                  <div className="border-t pt-2 flex justify-between text-sm">
-                    <span className="font-medium">固定支出小计</span>
-                    <span className="font-medium">₩{totalFixedCosts.toLocaleString()}/月</span>
-                  </div>
-                  <div className="flex justify-between text-sm pt-2">
-                    <span>留学基金还款</span>
-                    <span className="font-medium text-blue-600">₩{debtInKRW.toLocaleString()}/月</span>
-                  </div>
-                  <div className="border-t pt-2 flex justify-between font-bold">
-                    <span>月度合计</span>
-                    <span className="text-blue-600">₩{(totalFixedCosts + debtInKRW).toLocaleString()}</span>
-                  </div>
-                </div>
-              </CardContent>
-            </Card>
+                    {isAuthenticated && (
+                      <Dialog open={monthlyRecordDialogOpen} onOpenChange={setMonthlyRecordDialogOpen}>
+                        <DialogTrigger asChild>
+                          <Button className="bg-slate-800 hover:bg-slate-700 text-white" onClick={() => setEditingMonthlyRecord(null)}>
+                            <Plus className="h-4 w-4 mr-2" /> 添加月度记录
+                          </Button>
+                        </DialogTrigger>
+                        <DialogContent>
+                          <DialogHeader className="pb-4">
+                            <DialogTitle>{editingMonthlyRecord?.id ? '编辑月度记录' : '添加月度记录'}</DialogTitle>
+                          </DialogHeader>
+                          <form onSubmit={handleSaveMonthlyRecord} className="space-y-4">
+                            <div>
+                              <Label>月份</Label>
+                              <Input name="month" type="month" defaultValue={editingMonthlyRecord?.month || currentMonth} required className="mt-1" />
+                            </div>
+                            <div>
+                              <Label>当月工资收入（韩币）</Label>
+                              <Input name="salary" type="number" defaultValue={editingMonthlyRecord?.salary || monthlySettings.monthly_salary} required className="mt-1" />
+                            </div>
+                            <div>
+                              <Label>当月固定支出总额（韩币）</Label>
+                              <Input name="fixed_costs_total" type="number" defaultValue={editingMonthlyRecord?.fixed_costs_total || totalFixedCosts} required className="mt-1" />
+                              <p className="text-xs text-muted-foreground mt-1">当前固定支出合计: ₩{totalFixedCosts.toLocaleString()}</p>
+                            </div>
+                            <div>
+                              <Label>当月还债金额（韩币）</Label>
+                              <Input name="debt_payment" type="number" defaultValue={editingMonthlyRecord?.debt_payment || debtInKRW} required className="mt-1" />
+                              <p className="text-xs text-muted-foreground mt-1">当前还债金额: ₩{debtInKRW.toLocaleString()}</p>
+                            </div>
+                            <div>
+                              <Label>备注</Label>
+                              <Input name="notes" defaultValue={editingMonthlyRecord?.notes || ''} className="mt-1" />
+                            </div>
+                            <Button type="submit" className="w-full bg-slate-800 hover:bg-slate-700 text-white">保存</Button>
+                          </form>
+                        </DialogContent>
+                      </Dialog>
+                    )}
+                  </CardHeader>
+                  <CardContent>
+                    <div className="overflow-x-auto">
+                      <table className="w-full text-sm">
+                        <thead>
+                          <tr className="border-b">
+                            <th className="text-left py-2 px-2">月份</th>
+                            <th className="text-right py-2 px-2">工资收入</th>
+                            <th className="text-right py-2 px-2">固定支出</th>
+                            <th className="text-right py-2 px-2">还债</th>
+                            <th className="text-right py-2 px-2">生活支出</th>
+                            <th className="text-right py-2 px-2">结余</th>
+                            <th className="text-left py-2 px-2">备注</th>
+                            {isAuthenticated && <th className="text-right py-2 px-2">操作</th>}
+                          </tr>
+                        </thead>
+                        <tbody>
+                          {months.map(m => {
+                            const record = monthlyRecords.find(r => r.month === m)
+                            const monthExpenses = dailyExpenses
+                              .filter(e => e.expense_date.startsWith(m))
+                              .reduce((sum, e) => sum + e.amount, 0)
+                            const salary = record?.salary || 0
+                            const fixed = record?.fixed_costs_total || 0
+                            const debt = record?.debt_payment || 0
+                            const balance = salary - fixed - debt - monthExpenses
 
-            {/* 储蓄板块 */}
-            <Card>
-              <CardHeader className="bg-[#E0E7FF] rounded-t-lg">
-                <CardTitle className="text-base">储蓄进度</CardTitle>
-              </CardHeader>
-              <CardContent className="pt-4">
-                <div className="space-y-3">
-                  <div className="flex justify-between text-sm">
-                    <span>年度目标</span>
-                    <span className="font-medium">₩{(monthlySettings.target_savings * 12).toLocaleString()}</span>
-                  </div>
-                  <div className="flex justify-between text-sm">
-                    <span>已储蓄</span>
-                    <span className="font-medium text-green-600">₩{totalActualSavings.toLocaleString()}</span>
-                  </div>
-                  <div className="w-full bg-gray-200 rounded-full h-4 mt-2">
-                    <div
-                      className="bg-purple-500 h-4 rounded-full transition-all"
-                      style={{ width: `${Math.min((totalActualSavings / (monthlySettings.target_savings * 12)) * 100, 100)}%` }}
-                    />
-                  </div>
-                  <div className="text-center text-sm text-muted-foreground">
-                    完成 {((totalActualSavings / (monthlySettings.target_savings * 12)) * 100).toFixed(1)}%
-                  </div>
-                  <div className="border-t pt-2 flex justify-between font-bold">
-                    <span>还需储蓄</span>
-                    <span className="text-purple-600">₩{Math.max(0, monthlySettings.target_savings * 12 - totalActualSavings).toLocaleString()}</span>
-                  </div>
-                </div>
-              </CardContent>
-            </Card>
-          </div>
+                            return (
+                              <tr key={m} className="border-b hover:bg-slate-50">
+                                <td className="py-2 px-2 font-medium">{parseInt(m.slice(5))}月</td>
+                                <td className="text-right py-2 px-2 text-green-600">
+                                  {record ? `₩${salary.toLocaleString()}` : '-'}
+                                </td>
+                                <td className="text-right py-2 px-2">
+                                  {record ? `₩${fixed.toLocaleString()}` : '-'}
+                                </td>
+                                <td className="text-right py-2 px-2 text-blue-600">
+                                  {record ? `₩${debt.toLocaleString()}` : '-'}
+                                </td>
+                                <td className="text-right py-2 px-2 text-slate-600">
+                                  {monthExpenses > 0 ? `₩${monthExpenses.toLocaleString()}` : '-'}
+                                </td>
+                                <td className={`text-right py-2 px-2 font-medium ${balance >= 0 ? 'text-green-600' : 'text-red-500'}`}>
+                                  {record ? `₩${balance.toLocaleString()}` : '-'}
+                                </td>
+                                <td className="py-2 px-2 text-muted-foreground text-xs">{record?.notes || '-'}</td>
+                                {isAuthenticated && (
+                                  <td className="text-right py-2 px-2">
+                                    {record ? (
+                                      <div className="flex justify-end gap-1">
+                                        <Button variant="ghost" size="sm" className="h-6 w-6 p-0" onClick={() => { setEditingMonthlyRecord(record); setMonthlyRecordDialogOpen(true) }}>
+                                          <Pencil className="h-3 w-3" />
+                                        </Button>
+                                        <Button variant="ghost" size="sm" className="h-6 w-6 p-0" onClick={() => handleDeleteMonthlyRecord(record)}>
+                                          <Trash2 className="h-3 w-3 text-red-500" />
+                                        </Button>
+                                      </div>
+                                    ) : (
+                                      <Button
+                                        variant="ghost"
+                                        size="sm"
+                                        className="h-6 text-xs"
+                                        onClick={() => {
+                                          setEditingMonthlyRecord({
+                                            id: '',
+                                            month: m,
+                                            fixed_costs_total: totalFixedCosts,
+                                            debt_payment: debtInKRW,
+                                            salary: monthlySettings.monthly_salary,
+                                            notes: null
+                                          });
+                                          setMonthlyRecordDialogOpen(true)
+                                        }}
+                                      >
+                                        记录
+                                      </Button>
+                                    )}
+                                  </td>
+                                )}
+                              </tr>
+                            )
+                          })}
+                        </tbody>
+                        <tfoot>
+                          <tr className="bg-slate-100 font-bold">
+                            <td className="py-2 px-2">年度合计</td>
+                            <td className="text-right py-2 px-2 text-green-600">₩{yearTotalSalary.toLocaleString()}</td>
+                            <td className="text-right py-2 px-2">₩{yearTotalFixedCosts.toLocaleString()}</td>
+                            <td className="text-right py-2 px-2 text-blue-600">₩{yearTotalDebt.toLocaleString()}</td>
+                            <td className="text-right py-2 px-2 text-slate-600">₩{yearTotalExpenses.toLocaleString()}</td>
+                            <td className={`text-right py-2 px-2 ${yearTotalSalary - yearTotalFixedCosts - yearTotalDebt - yearTotalExpenses >= 0 ? 'text-green-600' : 'text-red-500'}`}>
+                              ₩{(yearTotalSalary - yearTotalFixedCosts - yearTotalDebt - yearTotalExpenses).toLocaleString()}
+                            </td>
+                            <td colSpan={isAuthenticated ? 2 : 1}></td>
+                          </tr>
+                        </tfoot>
+                      </table>
+                    </div>
+                  </CardContent>
+                </Card>
+
+                {/* 柱状图 - 使用实际记录数据 */}
+                <Card>
+                  <CardHeader>
+                    <CardTitle>月度支出趋势</CardTitle>
+                  </CardHeader>
+                  <CardContent>
+                    <div className="h-[300px]">
+                      <ResponsiveContainer width="100%" height="100%">
+                        <BarChart data={months.map(m => {
+                          const monthNum = parseInt(m.slice(5))
+                          const record = monthlyRecords.find(r => r.month === m)
+                          const expenses = dailyExpenses.filter(e => e.expense_date.startsWith(m)).reduce((sum, e) => sum + e.amount, 0)
+                          return {
+                            month: `${monthNum}月`,
+                            生活支出: expenses,
+                            固定支出: record?.fixed_costs_total || 0,
+                            还债: record?.debt_payment || 0
+                          }
+                        })}>
+                          <CartesianGrid strokeDasharray="3 3" />
+                          <XAxis dataKey="month" />
+                          <YAxis tickFormatter={(value) => `${(value / 10000).toFixed(0)}万`} />
+                          <Tooltip formatter={(value) => `₩${Number(value).toLocaleString()}`} />
+                          <Legend />
+                          <Bar dataKey="生活支出" fill="#6B8AAE" />
+                          <Bar dataKey="固定支出" fill="#94A3B8" />
+                          <Bar dataKey="还债" fill="#E0F2FE" />
+                        </BarChart>
+                      </ResponsiveContainer>
+                    </div>
+                  </CardContent>
+                </Card>
+
+                {/* 储蓄进度 */}
+                <Card>
+                  <CardHeader className="bg-[#E0E7FF] rounded-t-lg">
+                    <CardTitle className="text-base">年度储蓄进度</CardTitle>
+                  </CardHeader>
+                  <CardContent className="pt-4">
+                    <div className="grid md:grid-cols-4 gap-4">
+                      <div className="text-center">
+                        <p className="text-sm text-muted-foreground">年度目标</p>
+                        <p className="text-xl font-bold">₩{(monthlySettings.target_savings * 12).toLocaleString()}</p>
+                      </div>
+                      <div className="text-center">
+                        <p className="text-sm text-muted-foreground">已储蓄</p>
+                        <p className="text-xl font-bold text-green-600">₩{totalActualSavings.toLocaleString()}</p>
+                      </div>
+                      <div className="text-center">
+                        <p className="text-sm text-muted-foreground">完成率</p>
+                        <p className="text-xl font-bold text-purple-600">
+                          {((totalActualSavings / (monthlySettings.target_savings * 12)) * 100).toFixed(1)}%
+                        </p>
+                      </div>
+                      <div className="text-center">
+                        <p className="text-sm text-muted-foreground">还需储蓄</p>
+                        <p className="text-xl font-bold text-orange-600">
+                          ₩{Math.max(0, monthlySettings.target_savings * 12 - totalActualSavings).toLocaleString()}
+                        </p>
+                      </div>
+                    </div>
+                    <div className="w-full bg-slate-200 rounded-full h-4 mt-4">
+                      <div
+                        className="bg-purple-500 h-4 rounded-full transition-all"
+                        style={{ width: `${Math.min((totalActualSavings / (monthlySettings.target_savings * 12)) * 100, 100)}%` }}
+                      />
+                    </div>
+                  </CardContent>
+                </Card>
+              </>
+            )
+          })()}
         </TabsContent>
 
         {/* ========== 储蓄追踪 ========== */}
@@ -918,7 +1126,7 @@ export default function FinancePage() {
               {isAuthenticated && (
                 <Dialog open={savingsDialogOpen} onOpenChange={setSavingsDialogOpen}>
                   <DialogTrigger asChild>
-                    <Button className="bg-[#F4A4A4] hover:bg-[#E89090]" onClick={() => setEditingSaving(null)}>
+                    <Button className="bg-slate-800 hover:bg-slate-700 text-white" onClick={() => setEditingSaving(null)}>
                       <Plus className="h-4 w-4 mr-2" /> 记录储蓄
                     </Button>
                   </DialogTrigger>
@@ -943,7 +1151,7 @@ export default function FinancePage() {
                         <Label>备注</Label>
                         <Input name="notes" defaultValue={editingSaving?.notes || ''} className="mt-1" />
                       </div>
-                      <Button type="submit" className="w-full bg-[#F4A4A4] hover:bg-[#E89090]">保存</Button>
+                      <Button type="submit" className="w-full bg-slate-800 hover:bg-slate-700 text-white">保存</Button>
                     </form>
                   </DialogContent>
                 </Dialog>
@@ -976,7 +1184,7 @@ export default function FinancePage() {
                       const rate = cumulativeTarget > 0 ? (cumulativeActual / cumulativeTarget * 100).toFixed(1) : '0'
 
                       return (
-                        <tr key={m} className="border-b hover:bg-gray-50">
+                        <tr key={m} className="border-b hover:bg-slate-50">
                           <td className="py-2 px-2">{parseInt(m.slice(5))}月</td>
                           <td className="text-right py-2 px-2">{target.toLocaleString()}</td>
                           <td className="text-right py-2 px-2 font-medium text-green-600">
@@ -1016,7 +1224,7 @@ export default function FinancePage() {
               </div>
 
               {/* 年度总结 */}
-              <div className="mt-6 p-4 bg-[#FFE4E6] rounded-lg">
+              <div className="mt-6 p-4 bg-slate-100 rounded-lg">
                 <div className="grid grid-cols-3 gap-4 text-center">
                   <div>
                     <p className="text-sm text-muted-foreground">年度目标</p>
@@ -1028,7 +1236,7 @@ export default function FinancePage() {
                   </div>
                   <div>
                     <p className="text-sm text-muted-foreground">完成率</p>
-                    <p className="text-xl font-bold text-[#F4A4A4]">
+                    <p className="text-xl font-bold text-slate-600">
                       {((totalActualSavings / (monthlySettings.target_savings * 12)) * 100).toFixed(1)}%
                     </p>
                   </div>
@@ -1046,7 +1254,7 @@ export default function FinancePage() {
               {isAuthenticated && (
                 <Dialog open={sidejobDialogOpen} onOpenChange={setSidejobDialogOpen}>
                   <DialogTrigger asChild>
-                    <Button className="bg-[#F4A4A4] hover:bg-[#E89090]" onClick={() => setEditingSidejob(null)}>
+                    <Button className="bg-slate-800 hover:bg-slate-700 text-white" onClick={() => setEditingSidejob(null)}>
                       <Plus className="h-4 w-4 mr-2" /> 添加收入
                     </Button>
                   </DialogTrigger>
@@ -1080,7 +1288,7 @@ export default function FinancePage() {
                         <Label>备注</Label>
                         <Input name="notes" defaultValue={editingSidejob?.notes || ''} className="mt-1" />
                       </div>
-                      <Button type="submit" className="w-full bg-[#F4A4A4] hover:bg-[#E89090]">保存</Button>
+                      <Button type="submit" className="w-full bg-slate-800 hover:bg-slate-700 text-white">保存</Button>
                     </form>
                   </DialogContent>
                 </Dialog>
@@ -1107,7 +1315,7 @@ export default function FinancePage() {
                       </tr>
                     ) : (
                       sidejobIncome.map(item => (
-                        <tr key={item.id} className="border-b hover:bg-gray-50">
+                        <tr key={item.id} className="border-b hover:bg-slate-50">
                           <td className="py-2 px-2">{item.date}</td>
                           <td className="py-2 px-2">{item.source}</td>
                           <td className="text-right py-2 px-2 font-medium text-green-600">{item.amount.toLocaleString()}</td>
@@ -1130,7 +1338,7 @@ export default function FinancePage() {
                   </tbody>
                   {sidejobIncome.length > 0 && (
                     <tfoot>
-                      <tr className="bg-gray-50 font-medium">
+                      <tr className="bg-slate-50 font-medium">
                         <td className="py-2 px-2" colSpan={2}>合计</td>
                         <td className="text-right py-2 px-2 text-green-600">
                           ₩{sidejobIncome.reduce((sum, s) => sum + s.amount, 0).toLocaleString()}

@@ -12,6 +12,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
 import { createClient } from '@/lib/supabase/client'
 import { useAuth } from '@/lib/auth-context'
 import { toast } from 'sonner'
+import { getPraise } from '@/lib/praise'
 import {
   GraduationCap,
   DollarSign,
@@ -66,10 +67,10 @@ export default function SidejobPage() {
     try {
       if (editingTeaching) {
         await supabase.from('sidejob_teaching').update(data).eq('id', editingTeaching.id)
-        toast.success('记录已更新')
+        toast.success('记录已更新 - ' + getPraise('sidejob'))
       } else {
         await supabase.from('sidejob_teaching').insert(data)
-        toast.success('记录已添加')
+        toast.success('副业收入已添加 - ' + getPraise('sidejob'))
       }
       setTeachingDialogOpen(false)
       setEditingTeaching(null)
@@ -160,7 +161,7 @@ export default function SidejobPage() {
               {isAuthenticated && (
                 <Dialog open={teachingDialogOpen} onOpenChange={setTeachingDialogOpen}>
                   <DialogTrigger asChild>
-                    <Button className="bg-[#F4A4A4] hover:bg-[#E89090]" onClick={() => setEditingTeaching(null)}>
+                    <Button className="bg-slate-800 hover:bg-slate-700 text-white" onClick={() => setEditingTeaching(null)}>
                       <Plus className="h-4 w-4 mr-2" /> 添加记录
                     </Button>
                   </DialogTrigger>
@@ -191,7 +192,7 @@ export default function SidejobPage() {
                         <Label htmlFor="notes">备注</Label>
                         <Input id="notes" name="notes" defaultValue={editingTeaching?.notes || ''} className="mt-1" />
                       </div>
-                      <Button type="submit" className="w-full bg-[#F4A4A4] hover:bg-[#E89090]">保存</Button>
+                      <Button type="submit" className="w-full bg-slate-800 hover:bg-slate-700 text-white">保存</Button>
                     </form>
                   </DialogContent>
                 </Dialog>
@@ -200,14 +201,14 @@ export default function SidejobPage() {
             <CardContent>
               {loading ? (
                 <div className="space-y-2">
-                  {[1, 2, 3].map(i => <div key={i} className="h-12 bg-gray-100 rounded animate-pulse" />)}
+                  {[1, 2, 3].map(i => <div key={i} className="h-12 bg-slate-100 rounded animate-pulse" />)}
                 </div>
               ) : teaching.length === 0 ? (
                 <p className="text-center text-muted-foreground py-8">暂无记录</p>
               ) : (
                 <div className="space-y-2">
                   {teaching.map(item => (
-                    <div key={item.id} className="flex items-center justify-between p-3 border rounded-lg hover:bg-gray-50">
+                    <div key={item.id} className="flex items-center justify-between p-3 border rounded-lg hover:bg-slate-50">
                       <div>
                         <p className="font-medium">{item.student_name}</p>
                         <p className="text-sm text-muted-foreground">{item.date} · {item.hours}小时</p>
@@ -240,7 +241,7 @@ export default function SidejobPage() {
               {isAuthenticated && (
                 <Dialog open={xhsDialogOpen} onOpenChange={setXhsDialogOpen}>
                   <DialogTrigger asChild>
-                    <Button className="bg-[#F4A4A4] hover:bg-[#E89090]" onClick={() => setEditingXhs(null)}>
+                    <Button className="bg-slate-800 hover:bg-slate-700 text-white" onClick={() => setEditingXhs(null)}>
                       <Plus className="h-4 w-4 mr-2" /> 添加记录
                     </Button>
                   </DialogTrigger>
@@ -279,7 +280,7 @@ export default function SidejobPage() {
                         <Label htmlFor="notes">备注</Label>
                         <Input id="notes" name="notes" defaultValue={editingXhs?.notes || ''} className="mt-1" />
                       </div>
-                      <Button type="submit" className="w-full bg-[#F4A4A4] hover:bg-[#E89090]">保存</Button>
+                      <Button type="submit" className="w-full bg-slate-800 hover:bg-slate-700 text-white">保存</Button>
                     </form>
                   </DialogContent>
                 </Dialog>
@@ -288,14 +289,14 @@ export default function SidejobPage() {
             <CardContent>
               {loading ? (
                 <div className="space-y-2">
-                  {[1, 2, 3].map(i => <div key={i} className="h-12 bg-gray-100 rounded animate-pulse" />)}
+                  {[1, 2, 3].map(i => <div key={i} className="h-12 bg-slate-100 rounded animate-pulse" />)}
                 </div>
               ) : xiaohongshu.length === 0 ? (
                 <p className="text-center text-muted-foreground py-8">暂无记录</p>
               ) : (
                 <div className="space-y-2">
                   {xiaohongshu.map(item => (
-                    <div key={item.id} className="flex items-center justify-between p-3 border rounded-lg hover:bg-gray-50">
+                    <div key={item.id} className="flex items-center justify-between p-3 border rounded-lg hover:bg-slate-50">
                       <div>
                         <p className="font-medium">{item.brand}</p>
                         <p className="text-sm text-muted-foreground">{item.date} · {item.collaboration_type} · {item.status}</p>

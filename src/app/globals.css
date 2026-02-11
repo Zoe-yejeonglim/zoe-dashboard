@@ -1,26 +1,46 @@
 @import "tailwindcss";
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600&display=swap');
 
 :root {
-  --background: #FAFAFA;
-  --foreground: #374151;
+  /* Abigail - 清新蓝灰色调 */
+  --background: #F7F9FB;
+  --foreground: #334155;
   --card: #ffffff;
-  --card-foreground: #374151;
+  --card-foreground: #334155;
   --popover: #ffffff;
-  --popover-foreground: #374151;
-  --primary: #F4A4A4;
+  --popover-foreground: #334155;
+  --primary: #6B8AAE;
   --primary-foreground: #ffffff;
-  --secondary: #FFE4E6;
-  --secondary-foreground: #374151;
-  --muted: #f3f4f6;
-  --muted-foreground: #6b7280;
-  --accent: #FFE4E6;
-  --accent-foreground: #374151;
-  --destructive: #ef4444;
+  --secondary: #F1F5F9;
+  --secondary-foreground: #334155;
+  --muted: #F1F5F9;
+  --muted-foreground: #64748B;
+  --accent: #E2E8F0;
+  --accent-foreground: #334155;
+  --destructive: #EF4444;
   --destructive-foreground: #ffffff;
-  --border: #e5e7eb;
-  --input: #e5e7eb;
-  --ring: #F4A4A4;
+  --border: #E2E8F0;
+  --input: #E2E8F0;
+  --ring: #6B8AAE;
   --radius: 0.75rem;
+
+  /* 主题色彩 */
+  --slate-50: #F8FAFC;
+  --slate-100: #F1F5F9;
+  --slate-200: #E2E8F0;
+  --slate-300: #CBD5E1;
+  --slate-400: #94A3B8;
+  --slate-500: #64748B;
+  --slate-600: #475569;
+  --slate-700: #334155;
+  --slate-800: #1E293B;
+  --slate-900: #0F172A;
+
+  /* 强调色 */
+  --sky-400: #38BDF8;
+  --sky-500: #0EA5E9;
+
+  --font-main: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
 }
 
 @theme inline {
@@ -43,35 +63,105 @@
   --color-border: var(--border);
   --color-input: var(--input);
   --color-ring: var(--ring);
-  --font-sans: var(--font-geist-sans);
-  --font-mono: var(--font-geist-mono);
-  --radius-sm: calc(var(--radius) - 4px);
-  --radius-md: calc(var(--radius) - 2px);
-  --radius-lg: var(--radius);
-  --radius-xl: calc(var(--radius) + 4px);
-}
-
-@media (prefers-color-scheme: dark) {
-  :root {
-    --background: #1a1a1a;
-    --foreground: #ededed;
-    --card: #262626;
-    --card-foreground: #ededed;
-    --popover: #262626;
-    --popover-foreground: #ededed;
-    --muted: #404040;
-    --muted-foreground: #a3a3a3;
-    --border: #404040;
-    --input: #404040;
-  }
+  --font-sans: var(--font-main);
+  --radius-sm: calc(var(--radius) - 2px);
+  --radius-md: var(--radius);
+  --radius-lg: calc(var(--radius) + 2px);
+  --radius-xl: calc(var(--radius) + 6px);
 }
 
 body {
   background: var(--background);
   color: var(--foreground);
-  font-family: var(--font-sans), system-ui, sans-serif;
+  font-family: var(--font-main);
+  font-weight: 400;
+  line-height: 1.6;
+  letter-spacing: 0.01em;
+}
+
+h1, h2, h3, h4, h5, h6 {
+  font-family: var(--font-main);
+  font-weight: 500;
+  letter-spacing: -0.02em;
 }
 
 * {
   border-color: var(--border);
+}
+
+/* Page transition */
+.page-transition {
+  animation: fadeIn 0.3s ease-out;
+}
+
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+    transform: translateY(4px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+/* Smooth transitions */
+button, a, input, select, textarea {
+  transition: all 0.2s ease;
+}
+
+/* Premium card effect */
+.card-hover {
+  transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.card-hover:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 8px 25px -5px rgba(100, 116, 139, 0.1);
+}
+
+/* Elegant scrollbar */
+::-webkit-scrollbar {
+  width: 6px;
+  height: 6px;
+}
+
+::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+::-webkit-scrollbar-thumb {
+  background: var(--slate-300);
+  border-radius: 10px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: var(--slate-400);
+}
+
+/* Selection */
+::selection {
+  background: var(--sky-400);
+  color: white;
+}
+
+/* Gradient button effect */
+.btn-gradient {
+  background: linear-gradient(135deg, var(--primary) 0%, var(--sky-500) 100%);
+  transition: all 0.2s ease;
+}
+
+.btn-gradient:hover {
+  filter: brightness(1.05);
+  box-shadow: 0 4px 15px -3px rgba(107, 138, 174, 0.4);
+}
+
+/* Ghost icon animation */
+@keyframes float {
+  0%, 100% { transform: translateY(0); }
+  50% { transform: translateY(-3px); }
+}
+
+.ghost-float {
+  animation: float 3s ease-in-out infinite;
 }
