@@ -10,7 +10,6 @@ import {
   BookOpen,
   Wallet,
   Briefcase,
-  DollarSign,
   GraduationCap,
   LogIn,
   LogOut,
@@ -48,8 +47,7 @@ const navigation = [
   { name: '小红书', href: '/xiaohongshu', icon: BookOpen },
   { name: '资金规划', href: '/finance', icon: Wallet },
   { name: '工作发展', href: '/work', icon: Briefcase },
-  { name: '副业', href: '/sidejob', icon: DollarSign },
-  { name: 'OPIC', href: '/opic', icon: GraduationCap },
+  { name: '个人开发', href: '/personal-dev', icon: GraduationCap },
 ]
 
 export function Sidebar() {
