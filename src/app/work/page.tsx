@@ -68,8 +68,7 @@ export default function WorkPage() {
           setAllKeywords(parsed)
         }
       } catch (e) {
-        console.error('Failed to parse saved keywords')
-      }
+              }
     }
   }, [])
 
@@ -88,15 +87,10 @@ export default function WorkPage() {
 
       setAchievements(data || [])
 
-      // Extract all unique keywords from achievements
-      const existingKeywords = new Set<string>(DEFAULT_KEYWORDS)
-      data?.forEach(a => {
-        a.skills?.forEach((skill: string) => existingKeywords.add(skill))
-      })
-      setAllKeywords(Array.from(existingKeywords).sort())
+      // 只从成就中提取技能，不覆盖用户自定义的关键词
+      // 关键词管理完全由 localStorage 控制
     } catch (error) {
-      console.error('Error fetching data:', error)
-    } finally {
+          } finally {
       setLoading(false)
     }
   }, [supabase])
@@ -403,10 +397,10 @@ export default function WorkPage() {
 
       {/* Stats Overview - Year/Month/Week */}
       <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
-        <StatCard title="总成果数" value={totalAchievements} icon={Briefcase} iconClassName="bg-[#FEF3C7]" />
-        <StatCard title="本年" value={thisYearAchievements} icon={Calendar} iconClassName="bg-[#E0F2FE]" />
+        <StatCard title="总成果数" value={totalAchievements} icon={Briefcase} iconClassName="bg-amber-100" />
+        <StatCard title="本年" value={thisYearAchievements} icon={Calendar} iconClassName="bg-sky-100" />
         <StatCard title="本月" value={thisMonthAchievements} icon={CalendarDays} iconClassName="bg-sky-100" />
-        <StatCard title="本周" value={thisWeekAchievements} icon={CalendarClock} iconClassName="bg-[#E0E7FF]" />
+        <StatCard title="本周" value={thisWeekAchievements} icon={CalendarClock} iconClassName="bg-indigo-100" />
       </div>
 
       {/* Keyword Filter */}

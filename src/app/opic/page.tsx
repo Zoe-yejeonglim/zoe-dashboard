@@ -40,8 +40,7 @@ export default function OpicPage() {
         .order('date', { ascending: false })
       setRecords(data || [])
     } catch (error) {
-      console.error('Error fetching records:', error)
-    } finally {
+          } finally {
       setLoading(false)
     }
   }, [supabase])
@@ -160,10 +159,10 @@ export default function OpicPage() {
       </PageHeader>
 
       <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
-        <StatCard title="学习天数" value={totalDays} icon={Calendar} iconClassName="bg-[#FFE4E6]" />
-        <StatCard title="总学习时长" value={`${totalHours}小时`} icon={Clock} iconClassName="bg-[#E0F2FE]" />
-        <StatCard title="连续打卡" value={`${streak}天`} icon={Target} iconClassName="bg-[#D1FAE5]" />
-        <StatCard title="平均每天" value={totalDays > 0 ? `${Math.round(totalMinutes / totalDays)}分钟` : '0分钟'} icon={GraduationCap} iconClassName="bg-[#FEF3C7]" />
+        <StatCard title="学习天数" value={totalDays} icon={Calendar} iconClassName="bg-pink-100" />
+        <StatCard title="总学习时长" value={`${totalHours}小时`} icon={Clock} iconClassName="bg-sky-100" />
+        <StatCard title="连续打卡" value={`${streak}天`} icon={Target} iconClassName="bg-emerald-100" />
+        <StatCard title="平均每天" value={totalDays > 0 ? `${Math.round(totalMinutes / totalDays)}分钟` : '0分钟'} icon={GraduationCap} iconClassName="bg-amber-100" />
       </div>
 
       <Card>

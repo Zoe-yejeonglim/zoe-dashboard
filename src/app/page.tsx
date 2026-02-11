@@ -58,8 +58,7 @@ export default function Home() {
           totalSavings,
         })
       } catch (error) {
-        console.error('Error fetching stats:', error)
-      } finally {
+              } finally {
         setLoading(false)
       }
     }

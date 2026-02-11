@@ -153,9 +153,6 @@ export default function FinancePage() {
           cny_amount: debt.original_amount ?? 3250,
           exchange_rate: debt.interest_rate ?? 190
         })
-        console.log('Loaded debt settings:', debt)
-      } else {
-        console.log('No debt settings found in database')
       }
 
       if (settingsRes.data && settingsRes.data[0]) {
@@ -166,8 +163,7 @@ export default function FinancePage() {
         })
       }
     } catch (error) {
-      console.error('Error fetching data:', error)
-    } finally {
+          } finally {
       setLoading(false)
     }
   }, [supabase])
@@ -195,10 +191,6 @@ export default function FinancePage() {
   })
   const totalCurrentMonthExpenses = currentMonthExpenses.reduce((sum, e) => sum + e.amount, 0)
 
-  // Debug: 打印到控制台
-  console.log('Current month:', currentMonth)
-  console.log('All expenses:', dailyExpenses)
-  console.log('Filtered expenses:', currentMonthExpenses)
 
   // 按分类统计本月支出
   const expenseByCategory = EXPENSE_CATEGORIES.map(cat => {
@@ -317,16 +309,14 @@ export default function FinancePage() {
       if (editingSaving?.id) {
         const { error } = await supabase.from('finance_savings').update(data).eq('id', editingSaving.id)
         if (error) {
-          console.error('Update error:', error)
-          toast.error(`更新失败: ${error.message}`)
+                    toast.error(`更新失败: ${error.message}`)
           return
         }
         toast.success('储蓄记录已更新 - ' + getPraise('savings'))
       } else {
         const { error } = await supabase.from('finance_savings').insert(data)
         if (error) {
-          console.error('Insert error:', error)
-          toast.error(`添加失败: ${error.message}`)
+                    toast.error(`添加失败: ${error.message}`)
           return
         }
         toast.success('储蓄记录已添加 - ' + getPraise('savings'))
@@ -335,8 +325,7 @@ export default function FinancePage() {
       setEditingSaving(null)
       fetchData()
     } catch (error) {
-      console.error('Save error:', error)
-      toast.error('操作失败')
+            toast.error('操作失败')
     }
   }
 
@@ -406,16 +395,14 @@ export default function FinancePage() {
       if (editingMonthlyRecord?.id) {
         const { error } = await supabase.from('finance_monthly_records').update(data).eq('id', editingMonthlyRecord.id)
         if (error) {
-          console.error('Update error:', error)
-          toast.error(`更新失败: ${error.message}`)
+                    toast.error(`更新失败: ${error.message}`)
           return
         }
         toast.success('月度记录已更新 - ' + getPraise('expense'))
       } else {
         const { error } = await supabase.from('finance_monthly_records').insert(data)
         if (error) {
-          console.error('Insert error:', error)
-          toast.error(`添加失败: ${error.message}`)
+                    toast.error(`添加失败: ${error.message}`)
           return
         }
         toast.success('月度记录已添加 - ' + getPraise('expense'))
@@ -424,8 +411,7 @@ export default function FinancePage() {
       setEditingMonthlyRecord(null)
       fetchData()
     } catch (error) {
-      console.error('Save error:', error)
-      toast.error('操作失败，请检查数据库表是否存在')
+            toast.error('操作失败，请检查数据库表是否存在')
     }
   }
 
@@ -449,8 +435,7 @@ export default function FinancePage() {
           interest_rate: debtSettings.exchange_rate,
         }).eq('id', debtSettings.id)
         if (error) {
-          console.error('Debt update error:', error)
-          toast.error(`保存失败: ${error.message}`)
+                    toast.error(`保存失败: ${error.message}`)
           return
         }
       } else {
@@ -463,8 +448,7 @@ export default function FinancePage() {
           monthly_payment: debtSettings.cny_amount * debtSettings.exchange_rate,
         }).select()
         if (error) {
-          console.error('Debt insert error:', error)
-          toast.error(`保存失败: ${error.message}`)
+                    toast.error(`保存失败: ${error.message}`)
           return
         }
         if (data && data[0]) {
@@ -472,9 +456,7 @@ export default function FinancePage() {
         }
       }
       toast.success('还债设置已保存')
-      console.log('Saved debt settings:', debtSettings)
-    } catch (error) {
-      console.error('Save error:', error)
+    } catch {
       toast.error('保存失败')
     }
   }

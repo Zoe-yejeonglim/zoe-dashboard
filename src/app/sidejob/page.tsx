@@ -43,8 +43,7 @@ export default function SidejobPage() {
       setTeaching(teachingRes.data || [])
       setXiaohongshu(xhsRes.data || [])
     } catch (error) {
-      console.error('Error fetching data:', error)
-    } finally {
+          } finally {
       setLoading(false)
     }
   }, [supabase])
@@ -140,10 +139,10 @@ export default function SidejobPage() {
       <PageHeader title="副业" description="中文老师与小红书变现" />
 
       <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
-        <StatCard title="教学收入" value={`¥${totalTeachingIncome.toLocaleString()}`} icon={DollarSign} iconClassName="bg-[#D1FAE5]" />
-        <StatCard title="教学时长" value={`${totalTeachingHours}小时`} icon={Clock} iconClassName="bg-[#E0F2FE]" />
-        <StatCard title="小红书收入" value={`¥${totalXhsIncome.toLocaleString()}`} icon={DollarSign} iconClassName="bg-[#FFE4E6]" />
-        <StatCard title="总收入" value={`¥${(totalTeachingIncome + totalXhsIncome).toLocaleString()}`} icon={DollarSign} iconClassName="bg-[#FEF3C7]" />
+        <StatCard title="教学收入" value={`¥${totalTeachingIncome.toLocaleString()}`} icon={DollarSign} iconClassName="bg-emerald-100" />
+        <StatCard title="教学时长" value={`${totalTeachingHours}小时`} icon={Clock} iconClassName="bg-sky-100" />
+        <StatCard title="小红书收入" value={`¥${totalXhsIncome.toLocaleString()}`} icon={DollarSign} iconClassName="bg-pink-100" />
+        <StatCard title="总收入" value={`¥${(totalTeachingIncome + totalXhsIncome).toLocaleString()}`} icon={DollarSign} iconClassName="bg-amber-100" />
       </div>
 
       <Tabs defaultValue="teaching" className="space-y-4">

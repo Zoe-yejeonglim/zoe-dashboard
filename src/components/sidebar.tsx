@@ -23,15 +23,22 @@ import { Input } from './ui/input'
 import { Label } from './ui/label'
 import { toast } from 'sonner'
 
-// Ghost icon component (Abigail style)
+// Ghost icon component (Abigail style with flower)
 function GhostIcon({ className }: { className?: string }) {
   return (
     <svg
-      viewBox="0 0 24 24"
+      viewBox="0 0 28 28"
       fill="currentColor"
       className={cn("ghost-float", className)}
     >
-      <path d="M12 2C7.58 2 4 5.58 4 10v9c0 .55.45 1 1 1 .28 0 .53-.11.71-.29L7.41 18l1.29 1.29c.19.19.44.29.71.29s.53-.11.71-.29L11.41 18l.59.59.59-.59 1.29 1.29c.19.19.44.29.71.29s.53-.11.71-.29L16.59 18l1.71 1.71c.19.19.44.29.71.29.55 0 1-.45 1-1v-9c0-4.42-3.58-8-8-8zm-2 9c-.83 0-1.5-.67-1.5-1.5S9.17 8 10 8s1.5.67 1.5 1.5S10.83 11 10 11zm4 0c-.83 0-1.5-.67-1.5-1.5S13.17 8 14 8s1.5.67 1.5 1.5S14.83 11 14 11z"/>
+      {/* Flower on head */}
+      <circle cx="18" cy="4" r="2" fill="#F472B6"/>
+      <circle cx="20.5" cy="5.5" r="2" fill="#F9A8D4"/>
+      <circle cx="18" cy="7" r="2" fill="#F472B6"/>
+      <circle cx="15.5" cy="5.5" r="2" fill="#F9A8D4"/>
+      <circle cx="18" cy="5.5" r="1.5" fill="#FDE047"/>
+      {/* Ghost body */}
+      <path d="M14 6C9.58 6 6 9.58 6 14v9c0 .55.45 1 1 1 .28 0 .53-.11.71-.29L9.41 22l1.29 1.29c.19.19.44.29.71.29s.53-.11.71-.29L13.41 22l.59.59.59-.59 1.29 1.29c.19.19.44.29.71.29s.53-.11.71-.29L18.59 22l1.71 1.71c.19.19.44.29.71.29.55 0 1-.45 1-1v-9c0-4.42-3.58-8-8-8zm-2 9c-.83 0-1.5-.67-1.5-1.5S11.17 12 12 12s1.5.67 1.5 1.5S12.83 15 12 15zm4 0c-.83 0-1.5-.67-1.5-1.5S15.17 12 16 12s1.5.67 1.5 1.5S16.83 15 16 15z"/>
     </svg>
   )
 }
@@ -80,25 +87,25 @@ export function Sidebar() {
           variant="outline"
           size="icon"
           onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
-          className="bg-slate-800 border-slate-700 hover:bg-slate-700"
+          className="bg-slate-700 border-slate-600 hover:bg-slate-600"
         >
           {mobileMenuOpen ? <X className="h-5 w-5 text-white" /> : <Menu className="h-5 w-5 text-white" />}
         </Button>
       </div>
 
-      {/* Sidebar - Dark theme */}
+      {/* Sidebar - Soft theme */}
       <aside className={cn(
-        "fixed inset-y-0 left-0 z-40 w-60 bg-slate-900 transform transition-transform duration-300 ease-in-out lg:translate-x-0",
+        "fixed inset-y-0 left-0 z-40 w-60 bg-slate-700 transform transition-transform duration-300 ease-in-out lg:translate-x-0",
         mobileMenuOpen ? "translate-x-0" : "-translate-x-full"
       )}>
         <div className="flex flex-col h-full">
           {/* Logo - Abigail with ghost */}
-          <div className="px-6 py-8 border-b border-slate-800">
+          <div className="px-6 py-8 border-b border-slate-600">
             <div className="flex items-center gap-3">
-              <GhostIcon className="h-7 w-7 text-sky-400" />
+              <GhostIcon className="h-8 w-8 text-white" />
               <div>
-                <h1 className="text-xl font-semibold text-white tracking-tight">Abigail</h1>
-                <p className="text-[10px] text-slate-500 mt-0.5 tracking-widest uppercase">Personal Dashboard</p>
+                <h1 className="text-xl font-semibold text-white tracking-tight">Zoe & Abigail</h1>
+                <p className="text-[10px] text-slate-400 mt-0.5 tracking-widest uppercase">Personal Dashboard</p>
               </div>
             </div>
           </div>
@@ -115,11 +122,11 @@ export function Sidebar() {
                   className={cn(
                     "flex items-center gap-3 px-4 py-2.5 rounded-lg text-sm transition-all duration-200",
                     isActive
-                      ? "bg-slate-800 text-white font-medium"
-                      : "text-slate-400 hover:text-white hover:bg-slate-800/50"
+                      ? "bg-slate-600 text-white font-medium"
+                      : "text-slate-300 hover:text-white hover:bg-slate-600/50"
                   )}
                 >
-                  <item.icon className={cn("h-4 w-4", isActive ? "text-sky-400" : "")} />
+                  <item.icon className={cn("h-4 w-4", isActive ? "text-pink-300" : "")} />
                   {item.name}
                 </Link>
               )
@@ -127,27 +134,25 @@ export function Sidebar() {
           </nav>
 
           {/* Auth Section */}
-          <div className="px-3 py-6 border-t border-slate-800">
+          <div className="px-4 py-6 border-t border-slate-600">
             {loading ? (
-              <div className="text-center text-sm text-slate-500">Loading...</div>
+              <div className="text-center text-sm text-slate-400">Loading...</div>
             ) : isAuthenticated ? (
-              <Button
-                variant="ghost"
-                className="w-full justify-start text-slate-400 hover:text-white hover:bg-slate-800"
+              <div
+                className="flex items-center gap-3 py-2 text-sm text-slate-300 hover:text-white cursor-pointer transition-all"
                 onClick={handleLogout}
               >
-                <LogOut className="h-4 w-4 mr-2" />
-                退出登录
-              </Button>
+                <LogOut className="h-4 w-4" />
+                <span>退出登录</span>
+              </div>
             ) : (
-              <Button
-                variant="ghost"
-                className="w-full justify-start text-slate-400 hover:text-white hover:bg-slate-800"
+              <div
+                className="flex items-center gap-3 py-2 text-sm text-slate-300 hover:text-white cursor-pointer transition-all"
                 onClick={() => setLoginDialogOpen(true)}
               >
-                <LogIn className="h-4 w-4 mr-2" />
-                登录
-              </Button>
+                <LogIn className="h-4 w-4" />
+                <span>登录</span>
+              </div>
             )}
           </div>
         </div>
@@ -156,7 +161,7 @@ export function Sidebar() {
       {/* Mobile overlay */}
       {mobileMenuOpen && (
         <div
-          className="lg:hidden fixed inset-0 z-30 bg-slate-900/50 backdrop-blur-sm"
+          className="lg:hidden fixed inset-0 z-30 bg-slate-700/50 backdrop-blur-sm"
           onClick={() => setMobileMenuOpen(false)}
         />
       )}

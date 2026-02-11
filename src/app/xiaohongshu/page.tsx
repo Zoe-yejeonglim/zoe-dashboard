@@ -44,8 +44,7 @@ export default function XiaohongshuPage() {
         .order('post_date', { ascending: false })
       setNotes(data || [])
     } catch (error) {
-      console.error('Error fetching notes:', error)
-    } finally {
+          } finally {
       setLoading(false)
     }
   }, [supabase])
@@ -175,11 +174,11 @@ export default function XiaohongshuPage() {
       </PageHeader>
 
       <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-5">
-        <StatCard title="总笔记" value={notes.length} icon={BookOpen} iconClassName="bg-[#FFE4E6]" />
-        <StatCard title="总曝光" value={totalImpressions.toLocaleString()} icon={Eye} iconClassName="bg-[#E0F2FE]" />
-        <StatCard title="总点赞" value={totalLikes.toLocaleString()} icon={Heart} iconClassName="bg-[#FEF3C7]" />
-        <StatCard title="总收藏" value={totalSaves.toLocaleString()} icon={Bookmark} iconClassName="bg-[#D1FAE5]" />
-        <StatCard title="总涨粉" value={totalFollowers.toLocaleString()} icon={Users} iconClassName="bg-[#E0E7FF]" />
+        <StatCard title="总笔记" value={notes.length} icon={BookOpen} iconClassName="bg-pink-100" />
+        <StatCard title="总曝光" value={totalImpressions.toLocaleString()} icon={Eye} iconClassName="bg-sky-100" />
+        <StatCard title="总点赞" value={totalLikes.toLocaleString()} icon={Heart} iconClassName="bg-amber-100" />
+        <StatCard title="总收藏" value={totalSaves.toLocaleString()} icon={Bookmark} iconClassName="bg-emerald-100" />
+        <StatCard title="总涨粉" value={totalFollowers.toLocaleString()} icon={Users} iconClassName="bg-indigo-100" />
       </div>
 
       <Card>
