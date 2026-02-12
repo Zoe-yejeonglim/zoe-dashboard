@@ -23,6 +23,15 @@ import {
 } from 'lucide-react'
 import { PieChart, Pie, Cell, ResponsiveContainer, Tooltip, Legend, BarChart, Bar, XAxis, YAxis, CartesianGrid } from 'recharts'
 import { getPraise } from '@/lib/praise'
+import {
+  FinanceFixedCost,
+  FinanceDailyExpense,
+  FinanceMonthlySaving,
+  FinanceSidejobIncome,
+  FinanceDebtSettings,
+  FinanceMonthlySettings,
+  FinanceMonthlyRecord,
+} from '@/lib/types'
 
 // 支出分类（按照Excel）
 const EXPENSE_CATEGORIES = ['工作日餐饮', '休闲餐饮', '娱乐项目', '购物', '美丽基金', '其他']
@@ -30,78 +39,15 @@ const INCOME_SOURCES = ['中文老师', '小红书', '其他收入']
 
 const COLORS = ['#38BDF8', '#6B8AAE', '#94A3B8', '#0EA5E9', '#CBD5E1', '#64748B']
 
-// Types
-interface FixedCost {
-  id: string
-  name: string
-  amount: number
-  notes: string | null
-  is_active: boolean
-}
-
-interface DailyExpense {
-  id: string
-  expense_date: string
-  category: string
-  amount: number
-  notes: string | null
-}
-
-interface MonthlyIncome {
-  id: string
-  month: string // YYYY-MM
-  salary: number
-  chinese_teaching: number
-  xiaohongshu: number
-  other_income: number
-}
-
-interface MonthlySaving {
-  id: string
-  month: string // YYYY-MM format like "2025-01"
-  target_amount: number
-  actual_amount: number
-  notes: string | null
-}
-
-interface SidejobIncome {
-  id: string
-  date: string
-  source: string
-  amount: number
-  notes: string | null
-}
-
-interface DebtSettings {
-  id: string
-  cny_amount: number
-  exchange_rate: number
-}
-
-interface MonthlySettings {
-  id: string
-  monthly_salary: number
-  target_savings: number
-}
-
-interface MonthlyRecord {
-  id: string
-  month: string // YYYY-MM
-  fixed_costs_total: number
-  debt_payment: number
-  salary: number
-  notes: string | null
-}
-
 export default function FinancePage() {
   // State
-  const [fixedCosts, setFixedCosts] = useState<FixedCost[]>([])
-  const [dailyExpenses, setDailyExpenses] = useState<DailyExpense[]>([])
-  const [monthlySavings, setMonthlySavings] = useState<MonthlySaving[]>([])
-  const [sidejobIncome, setSidejobIncome] = useState<SidejobIncome[]>([])
-  const [monthlyRecords, setMonthlyRecords] = useState<MonthlyRecord[]>([])
-  const [debtSettings, setDebtSettings] = useState<DebtSettings>({ id: '', cny_amount: 3250, exchange_rate: 190 })
-  const [monthlySettings, setMonthlySettings] = useState<MonthlySettings>({ id: '', monthly_salary: 2820000, target_savings: 1000000 })
+  const [fixedCosts, setFixedCosts] = useState<FinanceFixedCost[]>([])
+  const [dailyExpenses, setDailyExpenses] = useState<FinanceDailyExpense[]>([])
+  const [monthlySavings, setMonthlySavings] = useState<FinanceMonthlySaving[]>([])
+  const [sidejobIncome, setSidejobIncome] = useState<FinanceSidejobIncome[]>([])
+  const [monthlyRecords, setMonthlyRecords] = useState<FinanceMonthlyRecord[]>([])
+  const [debtSettings, setDebtSettings] = useState<FinanceDebtSettings>({ id: '', cny_amount: 3250, exchange_rate: 190 })
+  const [monthlySettings, setMonthlySettings] = useState<FinanceMonthlySettings>({ id: '', monthly_salary: 2820000, target_savings: 1000000 })
   const [loading, setLoading] = useState(true)
 
   // Dialog states
@@ -110,11 +56,11 @@ export default function FinancePage() {
   const [savingsDialogOpen, setSavingsDialogOpen] = useState(false)
   const [sidejobDialogOpen, setSidejobDialogOpen] = useState(false)
   const [monthlyRecordDialogOpen, setMonthlyRecordDialogOpen] = useState(false)
-  const [editingFixedCost, setEditingFixedCost] = useState<FixedCost | null>(null)
-  const [editingExpense, setEditingExpense] = useState<DailyExpense | null>(null)
-  const [editingSaving, setEditingSaving] = useState<MonthlySaving | null>(null)
-  const [editingSidejob, setEditingSidejob] = useState<SidejobIncome | null>(null)
-  const [editingMonthlyRecord, setEditingMonthlyRecord] = useState<MonthlyRecord | null>(null)
+  const [editingFixedCost, setEditingFixedCost] = useState<FinanceFixedCost | null>(null)
+  const [editingExpense, setEditingExpense] = useState<FinanceDailyExpense | null>(null)
+  const [editingSaving, setEditingSaving] = useState<FinanceMonthlySaving | null>(null)
+  const [editingSidejob, setEditingSidejob] = useState<FinanceSidejobIncome | null>(null)
+  const [editingMonthlyRecord, setEditingMonthlyRecord] = useState<FinanceMonthlyRecord | null>(null)
 
   const supabase = createClient()
   const { isAuthenticated } = useAuth()
@@ -245,7 +191,7 @@ export default function FinancePage() {
     }
   }
 
-  const handleDeleteFixedCost = async (item: FixedCost) => {
+  const handleDeleteFixedCost = async (item: FinanceFixedCost) => {
     if (!confirm('确定删除这项固定支出吗？')) return
     try {
       await supabase.from('finance_fixed_costs').delete().eq('id', item.id)
@@ -283,7 +229,7 @@ export default function FinancePage() {
     }
   }
 
-  const handleDeleteExpense = async (item: DailyExpense) => {
+  const handleDeleteExpense = async (item: FinanceDailyExpense) => {
     if (!confirm('确定删除？')) return
     try {
       await supabase.from('finance_expenses').delete().eq('id', item.id)
@@ -329,7 +275,7 @@ export default function FinancePage() {
     }
   }
 
-  const handleDeleteSaving = async (item: MonthlySaving) => {
+  const handleDeleteSaving = async (item: FinanceMonthlySaving) => {
     if (!confirm('确定删除？')) return
     try {
       await supabase.from('finance_savings').delete().eq('id', item.id)
@@ -368,7 +314,7 @@ export default function FinancePage() {
     }
   }
 
-  const handleDeleteSidejob = async (item: SidejobIncome) => {
+  const handleDeleteSidejob = async (item: FinanceSidejobIncome) => {
     if (!confirm('确定删除？')) return
     try {
       await supabase.from('sidejob_teaching').delete().eq('id', item.id)
@@ -415,7 +361,7 @@ export default function FinancePage() {
     }
   }
 
-  const handleDeleteMonthlyRecord = async (item: MonthlyRecord) => {
+  const handleDeleteMonthlyRecord = async (item: FinanceMonthlyRecord) => {
     if (!confirm('确定删除这个月的记录吗？')) return
     try {
       await supabase.from('finance_monthly_records').delete().eq('id', item.id)
