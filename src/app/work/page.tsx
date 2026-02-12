@@ -60,6 +60,12 @@ export default function WorkPage() {
     return [...new Set(keywords)].sort()
   }, [achievements])
 
+  // Combine managed keywords (allKeywords) with used keywords for complete filter list
+  const filterKeywords = useMemo(() => {
+    const combined = new Set([...allKeywords, ...usedKeywords])
+    return [...combined].sort()
+  }, [allKeywords, usedKeywords])
+
   useEffect(() => {
     const saved = localStorage.getItem('work_keywords')
     if (saved) {
@@ -410,8 +416,8 @@ export default function WorkPage() {
             >
               全部
             </Badge>
-            {/* Use usedKeywords from achievements instead of allKeywords for filtering */}
-            {usedKeywords.map(keyword => {
+            {/* Use combined filterKeywords (managed + used) for filtering */}
+            {filterKeywords.map(keyword => {
               const count = achievements.filter(a => a.skills?.includes(keyword)).length
               return (
                 <Badge
