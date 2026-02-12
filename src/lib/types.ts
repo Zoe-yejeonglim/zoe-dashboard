@@ -1,3 +1,7 @@
+// ==========================================
+// Xiaohongshu (小红书) Types
+// ==========================================
+
 export interface XiaohongshuNote {
   id: string
   created_at: string
@@ -44,6 +48,10 @@ export interface XiaohongshuGoal {
   notes: string | null
 }
 
+// ==========================================
+// Finance (资金规划) Types
+// ==========================================
+
 export interface FinanceExpense {
   id: string
   created_at: string
@@ -56,18 +64,18 @@ export interface FinanceExpense {
 
 export interface FinanceFixedCost {
   id: string
-  created_at: string
+  created_at?: string
   name: string
   amount: number
-  due_day: number
-  category: string
+  due_day?: number
+  category?: string
   notes: string | null
   is_active: boolean
 }
 
 export interface FinanceSaving {
   id: string
-  created_at: string
+  created_at?: string
   month: string
   target_amount: number
   actual_amount: number
@@ -76,11 +84,11 @@ export interface FinanceSaving {
 
 export interface FinanceIncome {
   id: string
-  created_at: string
+  created_at?: string
   date: string
   source: string
   amount: number
-  category: string
+  category?: string
   notes: string | null
 }
 
@@ -108,6 +116,65 @@ export interface FinanceDebt {
   notes: string | null
 }
 
+// Finance page specific types
+export interface FinanceDailyExpense {
+  id: string
+  expense_date: string
+  category: string
+  amount: number
+  notes: string | null
+}
+
+export interface FinanceMonthlyIncome {
+  id: string
+  month: string // YYYY-MM
+  salary: number
+  chinese_teaching: number
+  xiaohongshu: number
+  other_income: number
+}
+
+export interface FinanceMonthlySaving {
+  id: string
+  month: string // YYYY-MM format like "2025-01"
+  target_amount: number
+  actual_amount: number
+  notes: string | null
+}
+
+export interface FinanceSidejobIncome {
+  id: string
+  date: string
+  source: string
+  amount: number
+  notes: string | null
+}
+
+export interface FinanceDebtSettings {
+  id: string
+  cny_amount: number
+  exchange_rate: number
+}
+
+export interface FinanceMonthlySettings {
+  id: string
+  monthly_salary: number
+  target_savings: number
+}
+
+export interface FinanceMonthlyRecord {
+  id: string
+  month: string // YYYY-MM
+  fixed_costs_total: number
+  debt_payment: number
+  salary: number
+  notes: string | null
+}
+
+// ==========================================
+// Work (工作发展) Types
+// ==========================================
+
 export interface WorkAchievement {
   id: string
   created_at: string
@@ -122,6 +189,10 @@ export interface WorkAchievement {
   metrics: string | null
   notes: string | null
 }
+
+// ==========================================
+// Sidejob (副业) Types
+// ==========================================
 
 export interface SidejobTeaching {
   id: string
@@ -145,6 +216,10 @@ export interface SidejobXiaohongshu {
   notes: string | null
 }
 
+// ==========================================
+// Learning (个人开发) Types
+// ==========================================
+
 export interface OpicDaily {
   id: string
   created_at: string
@@ -154,7 +229,6 @@ export interface OpicDaily {
   notes: string | null
 }
 
-// Personal Development
 export interface LearningProject {
   id: string
   name: string
