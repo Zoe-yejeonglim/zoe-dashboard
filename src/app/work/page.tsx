@@ -1,6 +1,6 @@
 'use client'
 
-import { useEffect, useState, useCallback } from 'react'
+import { useEffect, useState, useCallback, useMemo } from 'react'
 import { PageHeader } from '@/components/ui/page-header'
 import { StatCard } from '@/components/ui/stat-card'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
@@ -32,7 +32,6 @@ import { WorkAchievement } from '@/lib/types'
 
 const WORK_CATEGORIES = ['B2G项目', '翻译', '展会', '数据分析', '其他']
 
-// Default keywords - user can add more
 const DEFAULT_KEYWORDS = [
   '项目管理', '数据分析', '沟通协调', '报告撰写', '翻译',
   'Excel', 'PPT', '客户对接', '团队协作', '问题解决'
@@ -45,20 +44,22 @@ export default function WorkPage() {
   const [editing, setEditing] = useState<WorkAchievement | null>(null)
   const [expandedId, setExpandedId] = useState<string | null>(null)
 
-  // Keywords management - 从 localStorage 加载
   const [allKeywords, setAllKeywords] = useState<string[]>(DEFAULT_KEYWORDS)
-  const [selectedKeywords, setSelectedKeywords] = useState<string[]>([])
   const [filterKeyword, setFilterKeyword] = useState<string>('')
   const [keywordDialogOpen, setKeywordDialogOpen] = useState(false)
   const [newKeyword, setNewKeyword] = useState('')
 
-  // Form state for skills/keywords
   const [formSkills, setFormSkills] = useState<string[]>([])
 
   const supabase = createClient()
   const { isAuthenticated } = useAuth()
 
-  // 从 localStorage 加载关键词
+  // Extract all unique keywords used in achievements for filtering
+  const usedKeywords = useMemo(() => {
+    const keywords = achievements.flatMap(a => a.skills || [])
+    return [...new Set(keywords)].sort()
+  }, [achievements])
+
   useEffect(() => {
     const saved = localStorage.getItem('work_keywords')
     if (saved) {
@@ -68,11 +69,11 @@ export default function WorkPage() {
           setAllKeywords(parsed)
         }
       } catch (e) {
-              }
+        // ignore parse errors
+      }
     }
   }, [])
 
-  // 保存关键词到 localStorage
   const saveKeywords = (keywords: string[]) => {
     setAllKeywords(keywords)
     localStorage.setItem('work_keywords', JSON.stringify(keywords))
@@ -86,11 +87,9 @@ export default function WorkPage() {
         .order('achievement_date', { ascending: false })
 
       setAchievements(data || [])
-
-      // 只从成就中提取技能，不覆盖用户自定义的关键词
-      // 关键词管理完全由 localStorage 控制
     } catch (error) {
-          } finally {
+      // Handle error silently
+    } finally {
       setLoading(false)
     }
   }, [supabase])
@@ -179,7 +178,6 @@ export default function WorkPage() {
     toast.success('关键词已删除')
   }
 
-  // Stats calculations
   const now = new Date()
   const startOfYear = new Date(now.getFullYear(), 0, 1).toISOString().split('T')[0]
   const startOfMonth = new Date(now.getFullYear(), now.getMonth(), 1).toISOString().split('T')[0]
@@ -196,7 +194,6 @@ export default function WorkPage() {
     a.achievement_date && a.achievement_date >= startOfWeek
   ).length
 
-  // Filter achievements by keyword
   const filteredAchievements = filterKeyword
     ? achievements.filter(a => a.skills?.includes(filterKeyword))
     : achievements
@@ -261,7 +258,6 @@ export default function WorkPage() {
                   <DialogTitle className="text-xl">{editing ? '编辑成果' : '添加成果'}</DialogTitle>
                 </DialogHeader>
                 <form onSubmit={handleSave} className="space-y-6">
-                  {/* Basic Info */}
                   <div className="space-y-4">
                     <div>
                       <Label htmlFor="title" className="text-base">成果标题 *</Label>
@@ -288,7 +284,6 @@ export default function WorkPage() {
                     </div>
                   </div>
 
-                  {/* Keywords Section */}
                   <div className="space-y-3 p-4 border rounded-lg bg-slate-50">
                     <Label className="text-base flex items-center gap-2">
                       <Tag className="h-4 w-4" /> 关键词标签（用于筛选简历素材）
@@ -318,7 +313,6 @@ export default function WorkPage() {
                     </div>
                   </div>
 
-                  {/* STAR Section */}
                   <div className="space-y-4 p-4 border rounded-lg">
                     <h3 className="font-medium text-base">STAR 法则</h3>
                     <div className="grid gap-4">
@@ -369,7 +363,6 @@ export default function WorkPage() {
                     </div>
                   </div>
 
-                  {/* Additional Info */}
                   <div className="grid grid-cols-2 gap-4">
                     <div>
                       <Label htmlFor="metrics">可量化数据</Label>
@@ -395,7 +388,6 @@ export default function WorkPage() {
         )}
       </PageHeader>
 
-      {/* Stats Overview - Year/Month/Week */}
       <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
         <StatCard title="总成果数" value={totalAchievements} icon={Briefcase} iconClassName="bg-amber-100" />
         <StatCard title="本年" value={thisYearAchievements} icon={Calendar} iconClassName="bg-sky-100" />
@@ -403,7 +395,6 @@ export default function WorkPage() {
         <StatCard title="本周" value={thisWeekAchievements} icon={CalendarClock} iconClassName="bg-indigo-100" />
       </div>
 
-      {/* Keyword Filter */}
       <Card>
         <CardHeader>
           <CardTitle className="flex items-center gap-2 text-base">
@@ -419,9 +410,9 @@ export default function WorkPage() {
             >
               全部
             </Badge>
-            {allKeywords.map(keyword => {
+            {/* Use usedKeywords from achievements instead of allKeywords for filtering */}
+            {usedKeywords.map(keyword => {
               const count = achievements.filter(a => a.skills?.includes(keyword)).length
-              if (count === 0) return null
               return (
                 <Badge
                   key={keyword}
@@ -442,7 +433,6 @@ export default function WorkPage() {
         </CardContent>
       </Card>
 
-      {/* Achievements List */}
       <div className="space-y-4">
         {loading ? (
           <div className="space-y-4">
