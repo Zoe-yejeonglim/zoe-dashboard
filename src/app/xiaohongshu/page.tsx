@@ -44,7 +44,8 @@ export default function XiaohongshuPage() {
         .order('post_date', { ascending: false })
       setNotes(data || [])
     } catch (error) {
-          } finally {
+      console.error('Failed to fetch xiaohongshu notes:', error)
+    } finally {
       setLoading(false)
     }
   }, [supabase])
@@ -101,12 +102,12 @@ export default function XiaohongshuPage() {
   const totalFollowers = notes.reduce((sum, n) => sum + n.followers_gained, 0)
 
   return (
-    <div className="space-y-8">
+    <div className="px-4 sm:px-6 lg:px-8 max-w-7xl mx-auto py-8 space-y-8">
       <PageHeader title="小红书" description="笔记数据追踪与分析">
         {isAuthenticated && (
           <Dialog open={dialogOpen} onOpenChange={setDialogOpen}>
             <DialogTrigger asChild>
-              <Button className="bg-slate-800 hover:bg-slate-700 text-white" onClick={() => setEditing(null)}>
+              <Button className="" onClick={() => setEditing(null)}>
                 <Plus className="h-4 w-4 mr-2" /> 添加笔记
               </Button>
             </DialogTrigger>
@@ -166,7 +167,7 @@ export default function XiaohongshuPage() {
                   <Label htmlFor="notes">备注</Label>
                   <Input id="notes" name="notes" defaultValue={editing?.notes || ''} className="mt-1" />
                 </div>
-                <Button type="submit" className="w-full bg-slate-800 hover:bg-slate-700 text-white">保存</Button>
+                <Button type="submit" className="w-full ">保存</Button>
               </form>
             </DialogContent>
           </Dialog>
@@ -174,11 +175,11 @@ export default function XiaohongshuPage() {
       </PageHeader>
 
       <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-5">
-        <StatCard title="总笔记" value={notes.length} icon={BookOpen} iconClassName="bg-pink-100" />
-        <StatCard title="总曝光" value={totalImpressions.toLocaleString()} icon={Eye} iconClassName="bg-sky-100" />
-        <StatCard title="总点赞" value={totalLikes.toLocaleString()} icon={Heart} iconClassName="bg-amber-100" />
-        <StatCard title="总收藏" value={totalSaves.toLocaleString()} icon={Bookmark} iconClassName="bg-emerald-100" />
-        <StatCard title="总涨粉" value={totalFollowers.toLocaleString()} icon={Users} iconClassName="bg-indigo-100" />
+        <StatCard title="总笔记" value={notes.length} icon={BookOpen} iconClassName="bg-[#C9909A]/20" />
+        <StatCard title="总曝光" value={totalImpressions.toLocaleString()} icon={Eye} iconClassName="bg-[#C9909A]/20" />
+        <StatCard title="总点赞" value={totalLikes.toLocaleString()} icon={Heart} iconClassName="bg-[#C9909A]/20" />
+        <StatCard title="总收藏" value={totalSaves.toLocaleString()} icon={Bookmark} iconClassName="bg-[#C9909A]/20" />
+        <StatCard title="总涨粉" value={totalFollowers.toLocaleString()} icon={Users} iconClassName="bg-[#C9909A]/20" />
       </div>
 
       <Card>
@@ -189,22 +190,22 @@ export default function XiaohongshuPage() {
           {loading ? (
             <div className="space-y-2">
               {[1, 2, 3].map(i => (
-                <div key={i} className="h-16 bg-slate-100 rounded animate-pulse" />
+                <div key={i} className="h-16 bg-[#992755]/10 rounded animate-pulse" />
               ))}
             </div>
           ) : notes.length === 0 ? (
-            <p className="text-center text-muted-foreground py-8">暂无笔记数据</p>
+            <p className="text-center text-[#75728F] py-8">暂无笔记数据</p>
           ) : (
             <div className="space-y-3">
               {notes.map(note => (
-                <div key={note.id} className="flex items-center justify-between p-4 border rounded-lg hover:bg-slate-50">
+                <div key={note.id} className="flex items-center justify-between p-4 border rounded-lg hover:bg-[#992755]/5">
                   <div className="flex-1">
                     <h3 className="font-medium">{note.title}</h3>
-                    <p className="text-sm text-muted-foreground">
+                    <p className="text-sm text-[#75728F]">
                       {note.category} · {note.post_date || '未设置日期'}
                     </p>
                   </div>
-                  <div className="flex items-center gap-6 text-sm text-muted-foreground">
+                  <div className="flex items-center gap-6 text-sm text-[#75728F]">
                     <span className="flex items-center gap-1"><Eye className="h-4 w-4" /> {note.impressions}</span>
                     <span className="flex items-center gap-1"><Heart className="h-4 w-4" /> {note.likes}</span>
                     <span className="flex items-center gap-1"><Bookmark className="h-4 w-4" /> {note.saves}</span>

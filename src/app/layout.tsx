@@ -2,7 +2,7 @@ import type { Metadata } from "next";
 import { Inter } from "next/font/google";
 import "./globals.css";
 import { AuthProvider } from "@/lib/auth-context";
-import { Sidebar } from "@/components/sidebar";
+import { Navbar } from "@/components/navbar";
 import { Toaster } from "sonner";
 
 const inter = Inter({
@@ -22,14 +22,12 @@ export default function RootLayout({
 }>) {
   return (
     <html lang="zh">
-      <body className={`${inter.variable} antialiased bg-[#F7F9FB]`}>
+      <body className={`${inter.variable} antialiased bg-[#040104]`}>
         <AuthProvider>
-          <div className="flex min-h-screen">
-            <Sidebar />
-            <main className="flex-1 lg:ml-60 p-6 lg:p-10">
-              {children}
-            </main>
-          </div>
+          <Navbar />
+          <main className="min-h-screen pt-16">
+            {children}
+          </main>
           <Toaster position="top-right" richColors />
         </AuthProvider>
       </body>

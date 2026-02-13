@@ -1,43 +1,46 @@
 @import "tailwindcss";
 
 :root {
-  /* Abigail - 清新蓝灰色调 */
-  --background: #F7F9FB;
-  --foreground: #334155;
-  --card: #ffffff;
-  --card-foreground: #334155;
-  --popover: #ffffff;
-  --popover-foreground: #334155;
-  --primary: #6B8AAE;
+  /* 深色粉黑主题 - Crypto Dashboard Style */
+  --background: #040104;
+  --foreground: #E6E7FE;
+  --card: rgba(100, 32, 47, 0.15);
+  --card-foreground: #E6E7FE;
+  --popover: #0D0710;
+  --popover-foreground: #E6E7FE;
+  --primary: #992755;
   --primary-foreground: #ffffff;
-  --secondary: #F1F5F9;
-  --secondary-foreground: #334155;
-  --muted: #F1F5F9;
-  --muted-foreground: #64748B;
-  --accent: #E2E8F0;
-  --accent-foreground: #334155;
+  --secondary: rgba(117, 114, 143, 0.2);
+  --secondary-foreground: #B09FB5;
+  --muted: rgba(117, 114, 143, 0.15);
+  --muted-foreground: #75728F;
+  --accent: rgba(153, 39, 85, 0.3);
+  --accent-foreground: #D4B0B5;
   --destructive: #EF4444;
   --destructive-foreground: #ffffff;
-  --border: #E2E8F0;
-  --input: #E2E8F0;
-  --ring: #6B8AAE;
-  --radius: 0.75rem;
+  --border: rgba(117, 114, 143, 0.3);
+  --input: rgba(117, 114, 143, 0.2);
+  --ring: #992755;
+  --radius: 1rem;
 
   /* 主题色彩 */
-  --slate-50: #F8FAFC;
-  --slate-100: #F1F5F9;
-  --slate-200: #E2E8F0;
-  --slate-300: #CBD5E1;
-  --slate-400: #94A3B8;
-  --slate-500: #64748B;
-  --slate-600: #475569;
-  --slate-700: #334155;
-  --slate-800: #1E293B;
-  --slate-900: #0F172A;
+  --dark-100: #0D0710;
+  --dark-200: #150B18;
+  --dark-300: #1D1220;
+  --dark-400: #2A1A2E;
+  --dark-500: #3D2940;
 
-  /* 强调色 */
-  --sky-400: #38BDF8;
-  --sky-500: #0EA5E9;
+  /* 粉红色系 */
+  --pink-400: #C9909A;
+  --pink-500: #B87D87;
+  --pink-600: #DB2777;
+  --rose-500: #992755;
+  --rose-600: #64202F;
+
+  /* 灰紫色系 */
+  --purple-gray-300: #B09FB5;
+  --purple-gray-400: #75728F;
+  --purple-gray-500: #5A5770;
 
   --font-main: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
 }
@@ -63,10 +66,10 @@
   --color-input: var(--input);
   --color-ring: var(--ring);
   --font-sans: var(--font-main);
-  --radius-sm: calc(var(--radius) - 2px);
+  --radius-sm: calc(var(--radius) - 4px);
   --radius-md: var(--radius);
-  --radius-lg: calc(var(--radius) + 2px);
-  --radius-xl: calc(var(--radius) + 6px);
+  --radius-lg: calc(var(--radius) + 4px);
+  --radius-xl: calc(var(--radius) + 8px);
 }
 
 body {
@@ -82,6 +85,7 @@ h1, h2, h3, h4, h5, h6 {
   font-family: var(--font-main);
   font-weight: 500;
   letter-spacing: -0.02em;
+  color: #ffffff;
 }
 
 * {
@@ -109,53 +113,67 @@ button, a, input, select, textarea {
   transition: all 0.2s ease;
 }
 
+/* Glass card effect - 玻璃质感 */
+.glass-card {
+  background: linear-gradient(135deg, rgba(100, 32, 47, 0.2) 0%, rgba(153, 39, 85, 0.1) 100%);
+  backdrop-filter: blur(10px);
+  border: 1px solid rgba(153, 39, 85, 0.2);
+  border-radius: var(--radius);
+}
+
 /* Premium card effect */
 .card-hover {
-  transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
 }
 
 .card-hover:hover {
   transform: translateY(-2px);
-  box-shadow: 0 8px 25px -5px rgba(100, 116, 139, 0.1);
+  box-shadow: 0 8px 30px -5px rgba(153, 39, 85, 0.3);
+  border-color: rgba(153, 39, 85, 0.4);
 }
 
-/* Elegant scrollbar */
+/* Glow effect */
+.glow-pink {
+  box-shadow: 0 0 40px rgba(153, 39, 85, 0.4);
+}
+
+/* Elegant scrollbar - Dark theme */
 ::-webkit-scrollbar {
   width: 6px;
   height: 6px;
 }
 
 ::-webkit-scrollbar-track {
-  background: transparent;
+  background: var(--dark-200);
 }
 
 ::-webkit-scrollbar-thumb {
-  background: var(--slate-300);
+  background: var(--purple-gray-500);
   border-radius: 10px;
 }
 
 ::-webkit-scrollbar-thumb:hover {
-  background: var(--slate-400);
+  background: var(--rose-500);
 }
 
 /* Selection */
 ::selection {
-  background: var(--sky-400);
+  background: var(--rose-500);
   color: white;
 }
 
-/* Gradient button effect */
+/* Gradient button effect - Pink gradient */
 .btn-gradient {
-  background: linear-gradient(135deg, var(--primary) 0%, var(--sky-500) 100%);
+  background: linear-gradient(135deg, var(--rose-500) 0%, var(--pink-500) 100%);
   transition: all 0.2s ease;
 }
 
 .btn-gradient:hover {
-  filter: brightness(1.05);
-  box-shadow: 0 4px 15px -3px rgba(107, 138, 174, 0.4);
+  filter: brightness(1.1);
+  box-shadow: 0 4px 20px -3px rgba(153, 39, 85, 0.5);
 }
 
-/* Ghost icon animation */
+/* Ghost icon animation - Keep this! */
 @keyframes float {
   0%, 100% { transform: translateY(0); }
   50% { transform: translateY(-3px); }
@@ -163,4 +181,77 @@ button, a, input, select, textarea {
 
 .ghost-float {
   animation: float 3s ease-in-out infinite;
+}
+
+/* Pink gradient background */
+.bg-gradient-pink {
+  background: linear-gradient(135deg, rgba(153, 39, 85, 0.3) 0%, rgba(100, 32, 47, 0.2) 50%, transparent 100%);
+}
+
+/* Text gradient */
+.text-gradient-pink {
+  background: linear-gradient(135deg, #C9909A 0%, #B87D87 100%);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+}
+
+/* Input focus style */
+input:focus, select:focus, textarea:focus {
+  border-color: var(--rose-500) !important;
+  box-shadow: 0 0 0 2px rgba(153, 39, 85, 0.2) !important;
+}
+
+/* Table styles for dark theme */
+table {
+  border-collapse: separate;
+  border-spacing: 0;
+}
+
+th {
+  color: var(--purple-gray-300);
+  font-weight: 500;
+}
+
+td {
+  color: var(--foreground);
+}
+
+tr:hover {
+  background: rgba(153, 39, 85, 0.1);
+}
+
+/* Range slider - Dark pink theme */
+input[type="range"] {
+  -webkit-appearance: none;
+  appearance: none;
+  background: var(--dark-200);
+  border-radius: 8px;
+  height: 8px;
+}
+
+input[type="range"]::-webkit-slider-thumb {
+  -webkit-appearance: none;
+  appearance: none;
+  width: 20px;
+  height: 20px;
+  border-radius: 50%;
+  background: linear-gradient(135deg, var(--rose-500) 0%, var(--pink-500) 100%);
+  cursor: pointer;
+  box-shadow: 0 2px 8px rgba(153, 39, 85, 0.4);
+  transition: transform 0.2s ease;
+}
+
+input[type="range"]::-webkit-slider-thumb:hover {
+  transform: scale(1.1);
+}
+
+input[type="range"]::-moz-range-thumb {
+  width: 20px;
+  height: 20px;
+  border-radius: 50%;
+  background: linear-gradient(135deg, var(--rose-500) 0%, var(--pink-500) 100%);
+  cursor: pointer;
+  border: none;
+  box-shadow: 0 2px 8px rgba(153, 39, 85, 0.4);
 }

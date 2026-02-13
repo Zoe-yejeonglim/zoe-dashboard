@@ -1,10 +1,7 @@
 'use client'
 
 import { useEffect, useState, useCallback } from 'react'
-import { PageHeader } from '@/components/ui/page-header'
-import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
 import { createClient } from '@/lib/supabase/client'
-import { useAuth } from '@/lib/auth-context'
 import { toast } from 'sonner'
 import {
   FinanceFixedCost,
@@ -15,10 +12,8 @@ import {
   FinanceMonthlySettings,
   FinanceMonthlyRecord,
 } from '@/lib/types'
-import { DailyTab, MonthlyTab, SidejobTab } from '@/components/finance'
 
-export default function FinancePage() {
-  // State
+export function useFinanceData() {
   const [fixedCosts, setFixedCosts] = useState<FinanceFixedCost[]>([])
   const [dailyExpenses, setDailyExpenses] = useState<FinanceDailyExpense[]>([])
   const [monthlySavings, setMonthlySavings] = useState<FinanceMonthlySaving[]>([])
@@ -29,7 +24,6 @@ export default function FinancePage() {
   const [loading, setLoading] = useState(true)
 
   const supabase = createClient()
-  const { isAuthenticated } = useAuth()
 
   const fetchData = useCallback(async () => {
     try {
@@ -83,57 +77,21 @@ export default function FinancePage() {
     fetchData()
   }, [fetchData])
 
-  return (
-    <div className="px-4 sm:px-6 lg:px-8 max-w-7xl mx-auto py-8 space-y-8">
-      <PageHeader title="资金规划" description="每月资金规划与储蓄追踪" />
-
-      <Tabs defaultValue="daily" className="space-y-4">
-        <TabsList className="grid w-full grid-cols-3">
-          <TabsTrigger value="daily">每日记账</TabsTrigger>
-          <TabsTrigger value="monthly">月度总览</TabsTrigger>
-          <TabsTrigger value="sidejob">副业收入</TabsTrigger>
-        </TabsList>
-
-        {/* ========== 每日记账 ========== */}
-        <TabsContent value="daily" className="space-y-6">
-          <DailyTab
-            fixedCosts={fixedCosts}
-            dailyExpenses={dailyExpenses}
-            debtSettings={debtSettings}
-            monthlySettings={monthlySettings}
-            isAuthenticated={isAuthenticated}
-            supabase={supabase}
-            onDataChange={fetchData}
-            setDebtSettings={setDebtSettings}
-            setMonthlySettings={setMonthlySettings}
-          />
-        </TabsContent>
-
-        {/* ========== 月度总览 ========== */}
-        <TabsContent value="monthly" className="space-y-6">
-          <MonthlyTab
-            monthlyRecords={monthlyRecords}
-            dailyExpenses={dailyExpenses}
-            monthlySavings={monthlySavings}
-            monthlySettings={monthlySettings}
-            debtSettings={debtSettings}
-            fixedCosts={fixedCosts}
-            isAuthenticated={isAuthenticated}
-            supabase={supabase}
-            onDataChange={fetchData}
-          />
-        </TabsContent>
-
-        {/* ========== 副业收入 ========== */}
-        <TabsContent value="sidejob">
-          <SidejobTab
-            sidejobIncome={sidejobIncome}
-            isAuthenticated={isAuthenticated}
-            supabase={supabase}
-            onDataChange={fetchData}
-          />
-        </TabsContent>
-      </Tabs>
-    </div>
-  )
+  return {
+    // Data
+    fixedCosts,
+    dailyExpenses,
+    monthlySavings,
+    sidejobIncome,
+    monthlyRecords,
+    debtSettings,
+    monthlySettings,
+    loading,
+    // Setters
+    setDebtSettings,
+    setMonthlySettings,
+    // Actions
+    fetchData,
+    supabase,
+  }
 }
